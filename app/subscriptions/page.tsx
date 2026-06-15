@@ -234,6 +234,10 @@ export default function SubscriptionsPage() {
     load();
   }, [load]);
 
+  const closeModal = useCallback(() => {
+    setModal({ open: false, editing: null });
+  }, []);
+
   useEffect(() => {
     if (!modal.open) return;
     function onKey(e: KeyboardEvent) {
@@ -241,8 +245,7 @@ export default function SubscriptionsPage() {
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [modal.open]);
+  }, [modal.open, closeModal]);
 
   function openAdd() {
     setForm(DEFAULT_FORM);
@@ -259,39 +262,38 @@ export default function SubscriptionsPage() {
     setModal({ open: true, editing: sub });
   }
 
-  function closeModal() {
-    setModal({ open: false, editing: null });
-  }
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
-    if (modal.editing) {
-      await fetch(`/api/subscriptions/${modal.editing.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: form.name,
-          amount: parseFloat(form.amount),
-          dayOfMonth: parseInt(form.dayOfMonth),
-          category: form.category,
-        }),
-      });
-    } else {
-      await fetch("/api/subscriptions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: form.name,
-          amount: parseFloat(form.amount),
-          dayOfMonth: parseInt(form.dayOfMonth),
-          category: form.category,
-        }),
-      });
+    try {
+      if (modal.editing) {
+        await fetch(`/api/subscriptions/${modal.editing.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: form.name,
+            amount: parseFloat(form.amount),
+            dayOfMonth: parseInt(form.dayOfMonth, 10),
+            category: form.category,
+          }),
+        });
+      } else {
+        await fetch("/api/subscriptions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: form.name,
+            amount: parseFloat(form.amount),
+            dayOfMonth: parseInt(form.dayOfMonth, 10),
+            category: form.category,
+          }),
+        });
+      }
+      closeModal();
+      load();
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
-    closeModal();
-    load();
   }
 
   async function handleToggle(sub: Subscription) {
