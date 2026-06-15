@@ -6,18 +6,39 @@ import { useRouter } from "next/navigation";
 const INCOME_CATEGORIES = ["משכורת", "פרילנס", "מסחר", "אחר"];
 const EXPENSE_CATEGORIES = ["שכירות", "מזון", "תחבורה", "בילויים", "בריאות", "ביגוד", "חיסכון", "אחר"];
 
-interface Props {
-  onClose: () => void;
+interface EditTransaction {
+  id: string;
+  date: string;
+  type: string;
+  category: string;
+  description: string;
+  amount: number;
 }
 
-export default function AddTransactionModal({ onClose }: Props) {
+interface Props {
+  onClose: () => void;
+  editTransaction?: EditTransaction;
+}
+
+function toDateInputValue(dateStr: string): string {
+  const d = new Date(dateStr);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+export default function AddTransactionModal({ onClose, editTransaction }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const [type, setType] = useState<"income" | "expense">("expense");
-  const [date, setDate] = useState(() => new Date().toISOString().split("T")[0]);
-  const [category, setCategory] = useState(EXPENSE_CATEGORIES[0]);
-  const [description, setDescription] = useState("");
-  const [amount, setAmount] = useState("");
+  const isEditing = !!editTransaction;
+
+  const [type, setType] = useState<"income" | "expense">(
+    editTransaction ? (editTransaction.type === "income" ? "income" : "expense") : "expense"
+  );
+  const [date, setDate] = useState(() =>
+    editTransaction ? toDateInputValue(editTransaction.date) : new Date().toISOString().split("T")[0]
+  );
+  const [category, setCategory] = useState(editTransaction?.category ?? EXPENSE_CATEGORIES[0]);
+  const [description, setDescription] = useState(editTransaction?.description ?? "");
+  const [amount, setAmount] = useState(editTransaction ? String(editTransaction.amount) : "");
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -32,8 +53,10 @@ export default function AddTransactionModal({ onClose }: Props) {
   const accentBg = type === "income" ? "#f0fdf4" : "#fef2f2";
 
   useEffect(() => {
-    setCategory(type === "income" ? INCOME_CATEGORIES[0] : EXPENSE_CATEGORIES[0]);
-  }, [type]);
+    if (!isEditing) {
+      setCategory(type === "income" ? INCOME_CATEGORIES[0] : EXPENSE_CATEGORIES[0]);
+    }
+  }, [type, isEditing]);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -47,11 +70,19 @@ export default function AddTransactionModal({ onClose }: Props) {
     e.preventDefault();
     if (!amount || parseFloat(amount) <= 0) return;
 
-    await fetch("/api/transactions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ date, type, category, description, amount }),
-    });
+    if (isEditing) {
+      await fetch(`/api/transactions/${editTransaction!.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ date, type, category, description, amount }),
+      });
+    } else {
+      await fetch("/api/transactions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ date, type, category, description, amount }),
+      });
+    }
 
     startTransition(() => {
       router.refresh();
@@ -153,7 +184,7 @@ export default function AddTransactionModal({ onClose }: Props) {
               fontFamily: "Inter, sans-serif",
             }}
           >
-            עסקה חדשה
+            {isEditing ? "ערוך עסקה" : "עסקה חדשה"}
           </h2>
           <button
             onClick={onClose}
@@ -234,19 +265,30 @@ export default function AddTransactionModal({ onClose }: Props) {
           {/* Category */}
           <div>
             <label style={labelStyle}>קטגוריה</label>
-            <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              style={inputStyle}
-              onFocus={(e) => (e.currentTarget.style.borderColor = accentColor)}
-              onBlur={(e) => (e.currentTarget.style.borderColor = "#e8e8e8")}
-            >
-              {categories.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
+            {isEditing ? (
+              <input
+                type="text"
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                style={inputStyle}
+                onFocus={(e) => (e.currentTarget.style.borderColor = accentColor)}
+                onBlur={(e) => (e.currentTarget.style.borderColor = "#e8e8e8")}
+              />
+            ) : (
+              <select
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                style={inputStyle}
+                onFocus={(e) => (e.currentTarget.style.borderColor = accentColor)}
+                onBlur={(e) => (e.currentTarget.style.borderColor = "#e8e8e8")}
+              >
+                {categories.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
 
           {/* Description */}
@@ -339,7 +381,7 @@ export default function AddTransactionModal({ onClose }: Props) {
               e.currentTarget.style.background = accentColor;
             }}
           >
-            {isPending ? "שומר..." : "הוסף"}
+            {isPending ? "שומר..." : isEditing ? "שמור" : "הוסף"}
           </button>
         </form>
       </div>

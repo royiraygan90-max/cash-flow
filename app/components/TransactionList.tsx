@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { CATEGORY_COLORS } from "@/lib/categoryColors";
+import AddTransactionModal from "./AddTransactionModal";
 
 interface Transaction {
   id: string;
@@ -58,6 +59,7 @@ function CategoryTag({ category }: { category: string }) {
 function TransactionRow({ tx }: { tx: Transaction }) {
   const router = useRouter();
   const [confirm, setConfirm] = useState(false);
+  const [editing, setEditing] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   async function handleDelete() {
@@ -65,134 +67,160 @@ function TransactionRow({ tx }: { tx: Transaction }) {
     startTransition(() => router.refresh());
   }
 
+  const iconButtonStyle: React.CSSProperties = {
+    background: "none",
+    border: "none",
+    cursor: "pointer",
+    color: "#d1d5db",
+    fontSize: "1rem",
+    lineHeight: 1,
+    padding: 0,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    transition: "color 0.1s, opacity 0.1s",
+  };
+
   return (
-    <div
-      className="group"
-      style={{
-        display: "flex",
-        alignItems: "center",
-        borderBottom: "1px solid #f5f5f5",
-        transition: "background 0.1s",
-        direction: "rtl",
-        gap: "12px",
-      }}
-    >
-      <div className="flex items-center gap-3 w-full px-4 py-3 md:px-6 md:py-[14px]"
-        onMouseEnter={(e) => (e.currentTarget.style.background = "#fafafa")}
-        onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+    <>
+      {editing && (
+        <AddTransactionModal editTransaction={tx} onClose={() => setEditing(false)} />
+      )}
+      <div
+        className="group"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          borderBottom: "1px solid #f5f5f5",
+          transition: "background 0.1s",
+          direction: "rtl",
+          gap: "12px",
+        }}
       >
-        {/* Amount */}
-        <span
-          className="text-[0.9rem] md:text-[0.95rem]"
-          style={{
-            fontFamily: "'JetBrains Mono', monospace",
-            fontWeight: 600,
-            color: tx.type === "income" ? "#00875a" : "#dc2626",
-            flexShrink: 0,
-            minWidth: "100px",
-            textAlign: "right",
-          }}
+        <div className="flex items-center gap-3 w-full px-4 py-3 md:px-6 md:py-[14px]"
+          onMouseEnter={(e) => (e.currentTarget.style.background = "#fafafa")}
+          onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
         >
-          {tx.type === "income" ? "+" : "−"}₪{fmtAmount(tx.amount)}
-        </span>
+          {/* Amount */}
+          <span
+            className="text-[0.9rem] md:text-[0.95rem]"
+            style={{
+              fontFamily: "'JetBrains Mono', monospace",
+              fontWeight: 600,
+              color: tx.type === "income" ? "#00875a" : "#dc2626",
+              flexShrink: 0,
+              minWidth: "100px",
+              textAlign: "right",
+            }}
+          >
+            {tx.type === "income" ? "+" : "−"}₪{fmtAmount(tx.amount)}
+          </span>
 
-        {/* Description */}
-        <span
-          className="text-[0.85rem] md:text-[0.9rem]"
-          style={{
-            color: "#111111",
-            flex: 1,
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            whiteSpace: "nowrap",
-          }}
-        >
-          {tx.description || tx.category}
-        </span>
+          {/* Description */}
+          <span
+            className="text-[0.85rem] md:text-[0.9rem]"
+            style={{
+              color: "#111111",
+              flex: 1,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {tx.description || tx.category}
+          </span>
 
-        {/* Category tag */}
-        <CategoryTag category={tx.category} />
+          {/* Category tag */}
+          <CategoryTag category={tx.category} />
 
-        {/* Date */}
-        <span
-          className="text-[0.7rem]"
-          style={{
-            fontFamily: "'JetBrains Mono', monospace",
-            color: "#9ca3af",
-            flexShrink: 0,
-            minWidth: "36px",
-            textAlign: "left",
-          }}
-        >
-          {fmtDate(tx.date)}
-        </span>
+          {/* Date */}
+          <span
+            className="text-[0.7rem]"
+            style={{
+              fontFamily: "'JetBrains Mono', monospace",
+              color: "#9ca3af",
+              flexShrink: 0,
+              minWidth: "36px",
+              textAlign: "left",
+            }}
+          >
+            {fmtDate(tx.date)}
+          </span>
 
-        {/* Delete control */}
-        <div
-          style={{
-            width: "24px",
-            flexShrink: 0,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          {confirm ? (
-            <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
-              <button
-                onClick={handleDelete}
-                disabled={isPending}
-                style={{
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                  color: "#dc2626",
-                  fontSize: "0.7rem",
-                  fontFamily: "Inter, sans-serif",
-                  padding: 0,
-                }}
-              >
-                {isPending ? "..." : "כן"}
-              </button>
-              <button
-                onClick={() => setConfirm(false)}
-                style={{
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                  color: "#9ca3af",
-                  fontSize: "0.7rem",
-                  padding: 0,
-                }}
-              >
-                לא
-              </button>
-            </div>
-          ) : (
-            <button
-              onClick={() => setConfirm(true)}
-              aria-label="מחק"
-              /* Always visible on touch devices; hidden until hover on desktop */
-              className="opacity-100 md:opacity-0 md:group-hover:opacity-100"
-              style={{
-                background: "none",
-                border: "none",
-                cursor: "pointer",
-                color: "#d1d5db",
-                fontSize: "1rem",
-                lineHeight: 1,
-                padding: 0,
-                transition: "color 0.1s, opacity 0.1s",
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = "#dc2626")}
-              onMouseLeave={(e) => (e.currentTarget.style.color = "#d1d5db")}
-            >
-              ×
-            </button>
-          )}
+          {/* Action buttons */}
+          <div
+            style={{
+              flexShrink: 0,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "flex-end",
+              gap: "4px",
+              width: "52px",
+            }}
+          >
+            {confirm ? (
+              <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+                <button
+                  onClick={handleDelete}
+                  disabled={isPending}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    color: "#dc2626",
+                    fontSize: "0.7rem",
+                    fontFamily: "Inter, sans-serif",
+                    padding: 0,
+                  }}
+                >
+                  {isPending ? "..." : "כן"}
+                </button>
+                <button
+                  onClick={() => setConfirm(false)}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    color: "#9ca3af",
+                    fontSize: "0.7rem",
+                    padding: 0,
+                  }}
+                >
+                  לא
+                </button>
+              </div>
+            ) : (
+              <>
+                {/* Edit button */}
+                <button
+                  onClick={() => setEditing(true)}
+                  aria-label="ערוך"
+                  className="opacity-100 md:opacity-0 md:group-hover:opacity-100"
+                  style={iconButtonStyle}
+                  onMouseEnter={(e) => (e.currentTarget.style.color = "#2563eb")}
+                  onMouseLeave={(e) => (e.currentTarget.style.color = "#d1d5db")}
+                >
+                  <svg width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M9.5 1.5L11.5 3.5L4.5 10.5H2.5V8.5L9.5 1.5Z" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </button>
+                {/* Delete button */}
+                <button
+                  onClick={() => setConfirm(true)}
+                  aria-label="מחק"
+                  className="opacity-100 md:opacity-0 md:group-hover:opacity-100"
+                  style={{ ...iconButtonStyle, fontSize: "1rem" }}
+                  onMouseEnter={(e) => (e.currentTarget.style.color = "#dc2626")}
+                  onMouseLeave={(e) => (e.currentTarget.style.color = "#d1d5db")}
+                >
+                  ×
+                </button>
+              </>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 
