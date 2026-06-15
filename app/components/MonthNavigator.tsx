@@ -46,6 +46,34 @@ export default function MonthNavigator({ month, year }: Props) {
 
         <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
           <button
+            onClick={() => window.open("/api/export", "_blank")}
+            aria-label="ייצוא CSV"
+            style={{
+              background: "#ffffff",
+              border: "1px solid #e8e8e8",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
+              cursor: "pointer",
+              color: "#6b7280",
+              fontSize: "0.8rem",
+              fontFamily: "Inter, sans-serif",
+              fontWeight: 500,
+              padding: "6px 10px",
+              borderRadius: "6px",
+              marginLeft: "8px",
+              transition: "color 0.15s, background 0.15s",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = "#111111";
+              e.currentTarget.style.background = "#f5f5f5";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = "#6b7280";
+              e.currentTarget.style.background = "#ffffff";
+            }}
+          >
+            📥 ייצוא CSV
+          </button>
+          <button
             onClick={() => navigate(-1)}
             aria-label="חודש קודם"
             className="flex items-center justify-center"
