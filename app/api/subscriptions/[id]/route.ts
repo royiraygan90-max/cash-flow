@@ -11,7 +11,7 @@ export async function PUT(
   if (amount !== undefined && isNaN(parseFloat(amount))) {
     return NextResponse.json({ error: "Invalid amount" }, { status: 400 });
   }
-  if (dayOfMonth !== undefined && isNaN(parseInt(dayOfMonth))) {
+  if (dayOfMonth !== undefined && isNaN(parseInt(dayOfMonth, 10))) {
     return NextResponse.json({ error: "Invalid dayOfMonth" }, { status: 400 });
   }
 
@@ -21,7 +21,7 @@ export async function PUT(
       data: {
         ...(name !== undefined && { name }),
         ...(amount !== undefined && { amount: parseFloat(amount) }),
-        ...(dayOfMonth !== undefined && { dayOfMonth: parseInt(dayOfMonth) }),
+        ...(dayOfMonth !== undefined && { dayOfMonth: parseInt(dayOfMonth, 10) }),
         ...(category !== undefined && { category }),
         ...(isActive !== undefined && { isActive }),
       },
