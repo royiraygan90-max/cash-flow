@@ -8,6 +8,13 @@ export async function PUT(
   const body = await req.json();
   const { name, amount, dayOfMonth, category, isActive } = body;
 
+  if (amount !== undefined && isNaN(parseFloat(amount))) {
+    return NextResponse.json({ error: "Invalid amount" }, { status: 400 });
+  }
+  if (dayOfMonth !== undefined && isNaN(parseInt(dayOfMonth))) {
+    return NextResponse.json({ error: "Invalid dayOfMonth" }, { status: 400 });
+  }
+
   try {
     const updated = await prisma.subscription.update({
       where: { id: params.id },
