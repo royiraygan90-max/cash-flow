@@ -3,7 +3,6 @@ import { prisma } from "@/lib/prisma";
 
 export async function POST() {
   const today = new Date();
-  const todayDay = today.getDate();
   const year = today.getFullYear();
   const month = today.getMonth(); // 0-indexed
 
@@ -11,7 +10,7 @@ export async function POST() {
   const monthEnd = new Date(year, month + 1, 1);
 
   const activeSubscriptions = await prisma.subscription.findMany({
-    where: { isActive: true, dayOfMonth: todayDay },
+    where: { isActive: true },
   });
 
   let inserted = 0;
@@ -33,7 +32,7 @@ export async function POST() {
             description: sub.name,
             amount: sub.amount,
             category: sub.category,
-            date: today,
+            date: new Date(year, month, sub.dayOfMonth),
           },
         });
         inserted++;
