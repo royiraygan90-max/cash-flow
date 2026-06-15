@@ -16,3 +16,13 @@ model Transaction {
   amount      Float
   createdAt   DateTime @default(now())
 }
+
+model Subscription {
+  id         String   @id @default(cuid())
+  name       String
+  amount     Float
+  dayOfMonth Int
+  category   String   @default("מנוי")
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+}
