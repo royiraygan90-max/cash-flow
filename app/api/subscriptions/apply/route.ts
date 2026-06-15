@@ -17,25 +17,29 @@ export async function POST() {
   let inserted = 0;
 
   for (const sub of activeSubscriptions) {
-    const existing = await prisma.transaction.findFirst({
-      where: {
-        description: sub.name,
-        amount: sub.amount,
-        date: { gte: monthStart, lt: monthEnd },
-      },
-    });
-
-    if (!existing) {
-      await prisma.transaction.create({
-        data: {
-          type: "expense",
+    try {
+      const existing = await prisma.transaction.findFirst({
+        where: {
           description: sub.name,
           amount: sub.amount,
-          category: sub.category,
-          date: today,
+          date: { gte: monthStart, lt: monthEnd },
         },
       });
-      inserted++;
+
+      if (!existing) {
+        await prisma.transaction.create({
+          data: {
+            type: "expense",
+            description: sub.name,
+            amount: sub.amount,
+            category: sub.category,
+            date: today,
+          },
+        });
+        inserted++;
+      }
+    } catch (err) {
+      console.error(`[apply] Failed to process subscription ${sub.id}:`, err);
     }
   }
 
