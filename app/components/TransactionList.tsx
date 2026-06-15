@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { CATEGORY_COLORS } from "@/lib/categoryColors";
+import { CATEGORY_COLORS, DEFAULT_CATEGORY_COLOR } from "@/lib/categoryColors";
 import AddTransactionModal from "./AddTransactionModal";
 
 interface Transaction {
@@ -36,14 +36,14 @@ function fmtAmount(n: number): string {
 }
 
 function CategoryTag({ category }: { category: string }) {
-  const color = CATEGORY_COLORS[category] ?? "#6b7280";
+  const c = CATEGORY_COLORS[category] ?? DEFAULT_CATEGORY_COLOR;
   return (
     <span
       className="text-[0.65rem] md:text-[0.7rem]"
       style={{
-        background: `${color}26`,
-        color: color,
-        border: `1px solid ${color}4d`,
+        background: c.bg,
+        color: c.color,
+        border: `1px solid ${c.border}`,
         padding: "2px 6px",
         borderRadius: "4px",
         fontWeight: 500,

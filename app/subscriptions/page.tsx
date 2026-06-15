@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { CATEGORY_COLORS } from "@/lib/categoryColors";
+import { CATEGORY_COLORS, DEFAULT_CATEGORY_COLOR } from "@/lib/categoryColors";
 
 interface Subscription {
   id: string;
@@ -33,7 +33,7 @@ function SubscriptionRow({
   onToggle: () => void;
 }) {
   const [confirm, setConfirm] = useState(false);
-  const color = CATEGORY_COLORS[sub.category] ?? "#6b7280";
+  const c = CATEGORY_COLORS[sub.category] ?? DEFAULT_CATEGORY_COLOR;
 
   return (
     <div
@@ -97,9 +97,9 @@ function SubscriptionRow({
       {/* Category badge */}
       <span
         style={{
-          background: `${color}26`,
-          color,
-          border: `1px solid ${color}4d`,
+          background: c.bg,
+          color: c.color,
+          border: `1px solid ${c.border}`,
           padding: "2px 6px",
           borderRadius: "4px",
           fontSize: "0.7rem",

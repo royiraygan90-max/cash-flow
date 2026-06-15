@@ -228,7 +228,7 @@ function MobileAwareDonut({ data }: { data: CategoryData[] }) {
           {data.map((entry, i) => (
             <Cell
               key={i}
-              fill={CATEGORY_COLORS[entry.name] ?? FALLBACK_COLORS[i % FALLBACK_COLORS.length]}
+              fill={CATEGORY_COLORS[entry.name]?.color ?? FALLBACK_COLORS[i % FALLBACK_COLORS.length]}
             />
           ))}
         </Pie>
