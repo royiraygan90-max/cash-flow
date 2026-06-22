@@ -1,13 +1,14 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, JetBrains_Mono } from "next/font/google";
+import { Rubik } from "next/font/google";
 import "./globals.css";
 import NavBar from "@/app/components/NavBar";
 import SubscriptionsAutoApply from "@/app/components/SubscriptionsAutoApply";
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
-const jetbrains = JetBrains_Mono({
-  subsets: ["latin"],
-  variable: "--font-jetbrains",
+const rubik = Rubik({
+  subsets: ["latin", "hebrew"],
+  weight: ["300", "400", "500", "600", "700"],
+  variable: "--font-rubik",
+  display: "swap",
 });
 
 export const viewport: Viewport = {
@@ -24,7 +25,15 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="he" dir="rtl">
-      <body className={`${inter.variable} ${jetbrains.variable}`}>
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,400,0..1,0&display=block"
+          rel="stylesheet"
+        />
+      </head>
+      <body className={rubik.variable} style={{ fontFamily: "Rubik, sans-serif" }}>
         <NavBar />
         <SubscriptionsAutoApply />
         {children}
