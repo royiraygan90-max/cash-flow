@@ -3,7 +3,6 @@ import MonthNavigator from "@/app/components/MonthNavigator";
 import KPIStrip from "@/app/components/KPIStrip";
 import { SixMonthBarChart, ExpenseDonutChart } from "@/app/components/Charts";
 import TransactionList from "@/app/components/TransactionList";
-import FloatingAddButton from "@/app/components/FloatingAddButton";
 
 const HEBREW_MONTHS_SHORT = [
   "ינ", "פב", "מר", "אפ", "מי", "יו",
@@ -74,8 +73,6 @@ export default async function DashboardPage({ searchParams }: PageProps) {
       </div>
 
       <TransactionList transactions={serializedTransactions} />
-
-      <FloatingAddButton />
     </main>
   );
 }

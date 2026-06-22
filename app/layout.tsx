@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Rubik } from "next/font/google";
 import "./globals.css";
-import NavBar from "@/app/components/NavBar";
+import AppNav from "@/app/components/AppNav";
 import SubscriptionsAutoApply from "@/app/components/SubscriptionsAutoApply";
 
 const rubik = Rubik({
@@ -34,7 +34,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body className={rubik.variable} style={{ fontFamily: "Rubik, sans-serif" }}>
-        <NavBar />
+        <AppNav />
         <SubscriptionsAutoApply />
         {children}
       </body>
