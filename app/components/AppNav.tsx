@@ -9,23 +9,56 @@ import Icon from "./Icon";
 const AddTransactionModal = dynamic(() => import("./AddTransactionModal"), { ssr: false });
 
 const NAV_ITEMS = [
-  { href: "/", label: "בית", icon: "home" },
-  { href: "/subscriptions", label: "מנויים", icon: "autorenew" },
+  { href: "/",            label: "בית",       icon: "home" },
+  { href: "/statistics",  label: "סטטיסטיקה", icon: "monitoring" },
+  { href: "/subscriptions", label: "מנויים",  icon: "autorenew" },
 ];
+
+// Mobile: first FAB_SPLIT items appear on the right side of FAB (in RTL);
+// remaining items appear on the left side.
+const FAB_SPLIT = Math.ceil(NAV_ITEMS.length / 2); // 2
 
 export default function AppNav() {
   const pathname = usePathname();
   const [modalOpen, setModalOpen] = useState(false);
 
   function isActive(href: string) {
-    return pathname === href;
+    return pathname === href || (href !== "/" && pathname.startsWith(href + "/"));
   }
+
+  function NavTab({ item }: { item: (typeof NAV_ITEMS)[0] }) {
+    const active = isActive(item.href);
+    return (
+      <Link
+        href={item.href}
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: 4,
+          textDecoration: "none",
+          color: active ? "#34e0a1" : "#5c6776",
+          fontWeight: active ? 500 : 400,
+          fontSize: 11,
+          fontFamily: "Rubik, sans-serif",
+          transition: "color 0.15s",
+          minWidth: 52,
+        }}
+      >
+        <Icon name={item.icon} size={22} />
+        {item.label}
+      </Link>
+    );
+  }
+
+  const rightItems = NAV_ITEMS.slice(0, FAB_SPLIT);
+  const leftItems  = NAV_ITEMS.slice(FAB_SPLIT);
 
   return (
     <>
       {modalOpen && <AddTransactionModal onClose={() => setModalOpen(false)} />}
 
-      {/* ── Mobile bottom tab bar ── hidden on md+ */}
+      {/* ── Mobile bottom tab bar ── */}
       <nav
         className="md:hidden"
         style={{
@@ -36,31 +69,16 @@ export default function AppNav() {
           zIndex: 40,
           background: "#0b0e12",
           borderTop: "1px solid #161b22",
-          padding: "14px 26px calc(26px + env(safe-area-inset-bottom))",
+          padding: "14px 20px calc(26px + env(safe-area-inset-bottom))",
           display: "flex",
           alignItems: "flex-end",
           justifyContent: "space-around",
         }}
       >
-        {/* Left tab — בית */}
-        <Link
-          href={NAV_ITEMS[0].href}
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            gap: 4,
-            textDecoration: "none",
-            color: isActive(NAV_ITEMS[0].href) ? "#34e0a1" : "#5c6776",
-            fontWeight: isActive(NAV_ITEMS[0].href) ? 500 : 400,
-            fontSize: 11,
-            transition: "color 0.15s",
-            minWidth: 60,
-          }}
-        >
-          <Icon name={NAV_ITEMS[0].icon} size={22} />
-          {NAV_ITEMS[0].label}
-        </Link>
+        {/* Right side tabs (first in DOM → right in RTL) */}
+        {rightItems.map((item) => (
+          <NavTab key={item.href} item={item} />
+        ))}
 
         {/* Center FAB */}
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginTop: -28 }}>
@@ -88,28 +106,13 @@ export default function AppNav() {
           </button>
         </div>
 
-        {/* Right tab — מנויים */}
-        <Link
-          href={NAV_ITEMS[1].href}
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            gap: 4,
-            textDecoration: "none",
-            color: isActive(NAV_ITEMS[1].href) ? "#34e0a1" : "#5c6776",
-            fontWeight: isActive(NAV_ITEMS[1].href) ? 500 : 400,
-            fontSize: 11,
-            transition: "color 0.15s",
-            minWidth: 60,
-          }}
-        >
-          <Icon name={NAV_ITEMS[1].icon} size={22} />
-          {NAV_ITEMS[1].label}
-        </Link>
+        {/* Left side tabs (last in DOM → left in RTL) */}
+        {leftItems.map((item) => (
+          <NavTab key={item.href} item={item} />
+        ))}
       </nav>
 
-      {/* ── Desktop top bar ── hidden below md */}
+      {/* ── Desktop top bar ── */}
       <nav
         className="hidden md:flex"
         style={{
@@ -144,7 +147,6 @@ export default function AppNav() {
           </Link>
         ))}
 
-        {/* Desktop "add" button — right-aligned via margin-right: auto on desktop rtl layout */}
         <div style={{ marginRight: "auto" }}>
           <button
             onClick={() => setModalOpen(true)}
