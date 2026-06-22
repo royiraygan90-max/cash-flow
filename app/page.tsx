@@ -35,10 +35,13 @@ export default async function DashboardPage({ searchParams }: PageProps) {
   const totalIncome   = currentTransactions.filter((t) => t.type === "income").reduce((s, t) => s + t.amount, 0);
   const totalExpenses = currentTransactions.filter((t) => t.type === "expense").reduce((s, t) => s + t.amount, 0);
 
-  const monthShifts   = await prisma.shift.findMany({ where: { date: { gte: start, lt: end } } });
-  const regularHours  = monthShifts.reduce((s, sh) => s + sh.regularHours, 0);
-  const shabbatHours  = monthShifts.reduce((s, sh) => s + sh.shabbatHours, 0);
-  const salary        = computeSalary(regularHours, shabbatHours);
+  const monthShifts       = await prisma.shift.findMany({ where: { date: { gte: start, lt: end } } });
+  const regularHours      = monthShifts.reduce((s, sh) => s + sh.regularHours, 0);
+  const shabbatHours      = monthShifts.reduce((s, sh) => s + sh.shabbatHours, 0);
+  const salary            = computeSalary(regularHours, shabbatHours);
+  const salaryTransactions = currentTransactions.filter((t) => t.type === "income" && t.category === "משכורת");
+  const salaryPaidAmount   = salaryTransactions.reduce((s, t) => s + t.amount, 0);
+  const salaryPaid         = salaryTransactions.length > 0;
 
   const barData = await Promise.all(
     Array.from({ length: 6 }, (_, i) => {
@@ -82,7 +85,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
 
       <InOutRow totalIncome={totalIncome} totalExpenses={totalExpenses} />
 
-      {(regularHours + shabbatHours) > 0 && (
+      {((regularHours + shabbatHours) > 0 || salaryPaid) && (
         <ExpectedSalaryCard
           regularHours={regularHours}
           shabbatHours={shabbatHours}
@@ -90,6 +93,8 @@ export default async function DashboardPage({ searchParams }: PageProps) {
           net={salary.net}
           month={month}
           year={year}
+          salaryPaid={salaryPaid}
+          salaryPaidAmount={salaryPaidAmount}
         />
       )}
 

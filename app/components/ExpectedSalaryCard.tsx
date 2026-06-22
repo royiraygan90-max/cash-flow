@@ -1,5 +1,7 @@
 "use client";
 
+import Icon from "./Icon";
+
 interface Props {
   regularHours: number;
   shabbatHours: number;
@@ -7,6 +9,8 @@ interface Props {
   net: number;
   month: number;
   year: number;
+  salaryPaid: boolean;
+  salaryPaidAmount: number;
 }
 
 function fmt(n: number): string {
@@ -26,6 +30,8 @@ export default function ExpectedSalaryCard({
   net,
   month,
   year,
+  salaryPaid,
+  salaryPaidAmount,
 }: Props) {
   const totalHours = regularHours + shabbatHours;
 
@@ -42,41 +48,84 @@ export default function ExpectedSalaryCard({
       {/* Top row */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
         <span style={{ fontSize: 11, color: "#6b7785", fontFamily: "Rubik, sans-serif" }}>
-          לפי {formatHoursAsClock(totalHours)} שעות שהוזנו
+          {salaryPaid ? "התקבל החודש" : `לפי ${formatHoursAsClock(totalHours)} שעות שהוזנו`}
         </span>
         <span style={{ fontSize: 13, color: "#9aa6b4", fontFamily: "Rubik, sans-serif", fontWeight: 500 }}>
-          משכורת צפויה
+          {salaryPaid ? "משכורת" : "משכורת צפויה"}
         </span>
       </div>
 
-      {/* Net amount */}
-      <p
-        style={{
-          fontSize: 32,
-          fontWeight: 600,
-          color: "#34e0a1",
-          fontFamily: "Rubik, sans-serif",
-          lineHeight: 1,
-          direction: "ltr",
-          textAlign: "right",
-          margin: "0 0 6px",
-        }}
-      >
-        ₪{fmt(net)}
-      </p>
-
-      {/* Gross subtext */}
-      <p
-        style={{
-          fontSize: 12,
-          color: "#7c8896",
-          fontFamily: "Rubik, sans-serif",
-          margin: "0 0 14px",
-          textAlign: "right",
-        }}
-      >
-        ברוטו: ₪{fmt(gross)}
-      </p>
+      {salaryPaid ? (
+        <>
+          {/* Paid state: checkmark + שולם + actual amount */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "flex-end",
+              gap: 6,
+              marginBottom: 6,
+            }}
+          >
+            <span style={{ color: "#34e0a1", display: "inline-flex" }}>
+              <Icon name="check_circle" size={20} />
+            </span>
+            <span
+              style={{
+                fontSize: 18,
+                fontWeight: 600,
+                color: "#34e0a1",
+                fontFamily: "Rubik, sans-serif",
+              }}
+            >
+              שולם
+            </span>
+          </div>
+          <p
+            style={{
+              fontSize: 28,
+              fontWeight: 600,
+              color: "#f2f5f8",
+              fontFamily: "Rubik, sans-serif",
+              lineHeight: 1,
+              direction: "ltr",
+              textAlign: "right",
+              margin: "0 0 14px",
+            }}
+          >
+            ₪{fmt(salaryPaidAmount)}
+          </p>
+        </>
+      ) : (
+        <>
+          {/* Expected state: computed net + gross subtext */}
+          <p
+            style={{
+              fontSize: 32,
+              fontWeight: 600,
+              color: "#34e0a1",
+              fontFamily: "Rubik, sans-serif",
+              lineHeight: 1,
+              direction: "ltr",
+              textAlign: "right",
+              margin: "0 0 6px",
+            }}
+          >
+            ₪{fmt(net)}
+          </p>
+          <p
+            style={{
+              fontSize: 12,
+              color: "#7c8896",
+              fontFamily: "Rubik, sans-serif",
+              margin: "0 0 14px",
+              textAlign: "right",
+            }}
+          >
+            ברוטו: ₪{fmt(gross)}
+          </p>
+        </>
+      )}
 
       {/* Link to full breakdown */}
       <a
