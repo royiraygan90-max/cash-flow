@@ -12,10 +12,9 @@ interface Shift {
   date: string;
   startTime: string;
   endTime: string;
-  isShabbat: boolean;
   hours: number;
-  regularHours: number | null;
-  shabbatHours: number | null;
+  regularHours: number;
+  shabbatHours: number;
   createdAt: string;
 }
 
@@ -40,8 +39,8 @@ function ShiftRow({ shift }: { shift: Shift }) {
   const [isPending, startTransition] = useTransition();
 
   const overnight = isOvernightShift(shift.startTime, shift.endTime);
-  const reg  = shift.regularHours ?? 0;
-  const shab = shift.shabbatHours ?? 0;
+  const reg  = shift.regularHours;
+  const shab = shift.shabbatHours;
   const pureShabbat = reg === 0 && shab > 0;
   const mixed       = reg > 0  && shab > 0;
 

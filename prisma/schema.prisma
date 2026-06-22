@@ -32,9 +32,8 @@ model Shift {
   date         DateTime
   startTime    String
   endTime      String
-  isShabbat    Boolean
   hours        Float
-  regularHours Float?
-  shabbatHours Float?
+  regularHours Float
+  shabbatHours Float
   createdAt    DateTime @default(now())
 }

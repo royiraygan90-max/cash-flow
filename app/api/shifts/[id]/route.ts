@@ -18,7 +18,6 @@ export async function PUT(
         startTime,
         endTime,
         hours:        split.totalHours,
-        isShabbat:    split.shabbatHours > 0,
         regularHours: split.regularHours,
         shabbatHours: split.shabbatHours,
       },
