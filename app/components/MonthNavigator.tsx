@@ -13,19 +13,6 @@ interface Props {
   year: number;
 }
 
-const pillBtn: React.CSSProperties = {
-  background: "#161b22",
-  border: "1px solid #1f2630",
-  color: "#9aa6b4",
-  borderRadius: 99,
-  padding: "5px 12px",
-  fontSize: 12,
-  fontFamily: "Rubik, sans-serif",
-  fontWeight: 500,
-  cursor: "pointer",
-  transition: "color 0.15s, background 0.15s",
-};
-
 const navBtn: React.CSSProperties = {
   width: 30,
   height: 30,
@@ -37,8 +24,23 @@ const navBtn: React.CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  fontSize: 16,
   transition: "color 0.15s, background 0.15s",
+};
+
+const utilityPill: React.CSSProperties = {
+  background: "#161b22",
+  border: "1px solid #1f2630",
+  borderRadius: 99,
+  padding: "7px 14px",
+  display: "flex",
+  alignItems: "center",
+  gap: 6,
+  color: "#9aa6b4",
+  fontSize: 12,
+  fontFamily: "Rubik, sans-serif",
+  fontWeight: 500,
+  cursor: "pointer",
+  transition: "color 0.15s",
 };
 
 export default function MonthNavigator({ month, year }: Props) {
@@ -50,43 +52,29 @@ export default function MonthNavigator({ month, year }: Props) {
   }
 
   return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        marginBottom: 12,
-        marginTop: 16,
-        padding: "0 2px",
-        direction: "rtl",
-      }}
-    >
-      {/* Month label + prev/next */}
-      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+    <div style={{ display: "flex", flexDirection: "column" }}>
+      {/* Row 1 — month navigation, centered */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 14,
+          marginTop: 16,
+          marginBottom: 10,
+        }}
+      >
         <button
           onClick={() => navigate(-1)}
           aria-label="חודש קודם"
           style={navBtn}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.color = "#f2f5f8";
-            e.currentTarget.style.background = "#20272f";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.color = "#7c8896";
-            e.currentTarget.style.background = "#1b2230";
-          }}
+          onMouseEnter={(e) => { e.currentTarget.style.color = "#f2f5f8"; e.currentTarget.style.background = "#20272f"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.color = "#7c8896"; e.currentTarget.style.background = "#1b2230"; }}
         >
           <Icon name="chevron_right" size={18} />
         </button>
 
-        <span
-          style={{
-            fontSize: 17,
-            fontWeight: 600,
-            color: "#f2f5f8",
-            fontFamily: "Rubik, sans-serif",
-          }}
-        >
+        <span style={{ fontSize: 17, fontWeight: 600, color: "#f2f5f8", fontFamily: "Rubik, sans-serif" }}>
           {HEBREW_MONTHS[month - 1]} {year}
         </span>
 
@@ -94,73 +82,51 @@ export default function MonthNavigator({ month, year }: Props) {
           onClick={() => navigate(1)}
           aria-label="חודש הבא"
           style={navBtn}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.color = "#f2f5f8";
-            e.currentTarget.style.background = "#20272f";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.color = "#7c8896";
-            e.currentTarget.style.background = "#1b2230";
-          }}
+          onMouseEnter={(e) => { e.currentTarget.style.color = "#f2f5f8"; e.currentTarget.style.background = "#20272f"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.color = "#7c8896"; e.currentTarget.style.background = "#1b2230"; }}
         >
           <Icon name="chevron_left" size={18} />
         </button>
       </div>
 
-      {/* Action pills */}
-      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+      {/* Row 2 — utility pills */}
+      <div
+        style={{
+          display: "flex",
+          gap: 8,
+          justifyContent: "flex-start",
+          marginBottom: 12,
+          padding: "0 2px",
+        }}
+      >
         <button
           onClick={() => router.push("/shifts")}
-          aria-label="שעות עבודה"
-          style={navBtn}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.color = "#f2f5f8";
-            e.currentTarget.style.background = "#20272f";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.color = "#7c8896";
-            e.currentTarget.style.background = "#1b2230";
-          }}
-        >
-          <Icon name="schedule" size={16} />
-        </button>
-        <button
-          onClick={() => router.push("/insights")}
-          aria-label="תובנות"
-          style={navBtn}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.color = "#f2f5f8";
-            e.currentTarget.style.background = "#20272f";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.color = "#7c8896";
-            e.currentTarget.style.background = "#1b2230";
-          }}
-        >
-          <Icon name="notifications" size={16} />
-        </button>
-        <button
-          onClick={() => window.open("/api/export", "_blank")}
-          aria-label="ייצוא CSV"
-          style={pillBtn}
+          style={utilityPill}
           onMouseEnter={(e) => (e.currentTarget.style.color = "#f2f5f8")}
           onMouseLeave={(e) => (e.currentTarget.style.color = "#9aa6b4")}
         >
-          ייצוא CSV
+          <Icon name="schedule" size={14} />
+          שעות עבודה
         </button>
+
         <button
-          onClick={async () => {
-            if (confirm("האם אתה בטוח? פעולה זו תמחק את כל העסקאות לצמיתות.")) {
-              await fetch("/api/clear", { method: "DELETE" });
-              window.location.reload();
-            }
-          }}
-          aria-label="נקה הכל"
-          style={{ ...pillBtn, color: "#ff6b6b", borderColor: "#3a2226" }}
-          onMouseEnter={(e) => (e.currentTarget.style.background = "#1c1316")}
-          onMouseLeave={(e) => (e.currentTarget.style.background = "#161b22")}
+          onClick={() => router.push("/insights")}
+          style={utilityPill}
+          onMouseEnter={(e) => (e.currentTarget.style.color = "#f2f5f8")}
+          onMouseLeave={(e) => (e.currentTarget.style.color = "#9aa6b4")}
         >
-          נקה הכל
+          <Icon name="notifications" size={14} />
+          תובנות
+        </button>
+
+        <button
+          onClick={() => window.open("/api/export", "_blank")}
+          style={utilityPill}
+          onMouseEnter={(e) => (e.currentTarget.style.color = "#f2f5f8")}
+          onMouseLeave={(e) => (e.currentTarget.style.color = "#9aa6b4")}
+        >
+          <Icon name="download" size={14} />
+          ייצוא CSV
         </button>
       </div>
     </div>
