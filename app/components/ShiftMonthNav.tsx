@@ -87,6 +87,24 @@ export default function ShiftMonthNav({ month, year }: Props) {
           </button>
         </div>
 
+        {/* Salary link */}
+        <a
+          href={`/salary?month=${month}&year=${year}`}
+          style={{
+            fontSize: 12,
+            color: "#7c8896",
+            fontFamily: "Rubik, sans-serif",
+            textDecoration: "none",
+            cursor: "pointer",
+            transition: "color 0.15s",
+            marginLeft: 8,
+          }}
+          onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.textDecoration = "underline"; (e.currentTarget as HTMLAnchorElement).style.color = "#9aa6b4"; }}
+          onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.textDecoration = "none"; (e.currentTarget as HTMLAnchorElement).style.color = "#7c8896"; }}
+        >
+          שכר צפוי ←
+        </a>
+
         {/* Add shift pill */}
         <button
           onClick={() => setModalOpen(true)}
