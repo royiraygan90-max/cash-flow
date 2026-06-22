@@ -339,9 +339,13 @@ git commit -m "style: extend CategoryColor with icon field, remap to dark accent
 
 ### Task 4: AppNav.tsx — bottom tab bar + FAB + desktop top bar
 
+> **⚠️ layout.tsx NavBar → AppNav swap is PART OF THIS TASK.**
+> Step 2 below replaces the NavBar import in `app/layout.tsx` with AppNav. Do NOT defer this to Task 13.
+> Task 13 only deletes the now-unused `NavBar.tsx` file and runs the final build check — if `layout.tsx` still imports NavBar at that point the build will fail.
+
 **Files:**
 - Create: `app/components/AppNav.tsx`
-- Modify: `app/layout.tsx` (swap NavBar → AppNav)
+- Modify: `app/layout.tsx` — remove `import NavBar` and `<NavBar />`, add `import AppNav` and `<AppNav />` (done in Step 2 of this task)
 - Delete: `app/components/FloatingAddButton.tsx`
 - Modify: `app/page.tsx` (remove FloatingAddButton import + render)
 
@@ -526,9 +530,9 @@ export default function AppNav() {
 }
 ```
 
-- [ ] **Step 2: Update app/layout.tsx to use AppNav**
+- [ ] **Step 2: Update app/layout.tsx — replace NavBar with AppNav RIGHT NOW**
 
-Replace the NavBar import/usage with AppNav:
+This step must happen in Task 4, not later. Remove the `NavBar` import and its `<NavBar />` render; add `AppNav` import and `<AppNav />`. After this step `NavBar` is referenced nowhere in the codebase — Task 13 simply deletes the file. Full replacement:
 
 ```tsx
 import type { Metadata, Viewport } from "next";
@@ -2497,10 +2501,18 @@ git commit -m "style: subscriptions page dark restyle with hero card and icon ch
 
 ### Task 13: Final cleanup — delete NavBar.tsx, final build verification
 
-**Files:**
-- Delete: `app/components/NavBar.tsx`
+> **Scope:** `layout.tsx` was already switched to AppNav in Task 4. This task only deletes the orphaned file and confirms a clean build.
 
-- [ ] **Step 1: Delete NavBar.tsx**
+**Files:**
+- Delete: `app/components/NavBar.tsx` (already unreferenced since Task 4)
+
+- [ ] **Step 1: Confirm NavBar.tsx is unreferenced, then delete it**
+
+```bash
+grep -r "NavBar" /Users/royiraygan/cash-flow/app /Users/royiraygan/cash-flow/lib
+```
+
+Expected: no output (zero references). Then delete:
 
 ```bash
 rm /Users/royiraygan/cash-flow/app/components/NavBar.tsx
