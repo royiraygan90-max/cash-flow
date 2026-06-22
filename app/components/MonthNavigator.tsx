@@ -110,6 +110,21 @@ export default function MonthNavigator({ month, year }: Props) {
       {/* Action pills */}
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
         <button
+          onClick={() => router.push("/shifts")}
+          aria-label="שעות עבודה"
+          style={navBtn}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = "#f2f5f8";
+            e.currentTarget.style.background = "#20272f";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = "#7c8896";
+            e.currentTarget.style.background = "#1b2230";
+          }}
+        >
+          <Icon name="schedule" size={16} />
+        </button>
+        <button
           onClick={() => router.push("/insights")}
           aria-label="תובנות"
           style={navBtn}

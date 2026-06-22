@@ -26,3 +26,13 @@ model Subscription {
   isActive   Boolean  @default(true)
   createdAt  DateTime @default(now())
 }
+
+model Shift {
+  id        String   @id @default(cuid())
+  date      DateTime
+  startTime String
+  endTime   String
+  isShabbat Boolean
+  hours     Float
+  createdAt DateTime @default(now())
+}
