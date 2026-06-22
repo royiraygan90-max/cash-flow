@@ -22,12 +22,8 @@ export default async function ShiftsPage({ searchParams }: PageProps) {
     orderBy: { date: "asc" },
   });
 
-  const regularHours = shifts
-    .filter((s) => !s.isShabbat)
-    .reduce((sum, s) => sum + s.hours, 0);
-  const shabbatHours = shifts
-    .filter((s) => s.isShabbat)
-    .reduce((sum, s) => sum + s.hours, 0);
+  const regularHours = shifts.reduce((sum, s) => sum + (s.regularHours ?? 0), 0);
+  const shabbatHours = shifts.reduce((sum, s) => sum + (s.shabbatHours ?? 0), 0);
 
   const serialized = shifts.map((s) => ({
     ...s,

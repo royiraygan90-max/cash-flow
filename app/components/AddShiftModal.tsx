@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { calcShiftHours, isShabbatShift, calcShiftPay, formatHoursAsClock } from "@/lib/shiftCalc";
+import { splitShiftHours, calcShiftPay, formatHoursAsClock } from "@/lib/shiftCalc";
 import { useToast } from "./Toast";
 import Icon from "./Icon";
 
@@ -60,12 +60,13 @@ export default function AddShiftModal({ onClose, editShift }: Props) {
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  // Live preview values — computed inline, no state needed
-  const hasPreview = startTime !== "" && endTime !== "";
-  const previewHours   = hasPreview ? calcShiftHours(startTime, endTime) : 0;
-  const previewDate    = hasPreview && date ? new Date(date + "T00:00:00") : null;
-  const previewShabbat = previewDate ? isShabbatShift(previewDate, startTime) : false;
-  const previewPay     = hasPreview ? Math.round(calcShiftPay(previewHours, previewShabbat)) : 0;
+  // Live preview — computed inline
+  const hasPreview  = startTime !== "" && endTime !== "";
+  const previewDate = hasPreview && date ? new Date(date + "T00:00:00") : null;
+  const previewSplit = previewDate ? splitShiftHours(previewDate, startTime, endTime) : null;
+  const previewPay   = previewSplit ? Math.round(calcShiftPay(previewSplit.regularHours, previewSplit.shabbatHours)) : 0;
+  const isMixed       = !!previewSplit && previewSplit.regularHours > 0 && previewSplit.shabbatHours > 0;
+  const isPureShabbat = !!previewSplit && previewSplit.regularHours === 0 && previewSplit.shabbatHours > 0;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -280,34 +281,40 @@ export default function AddShiftModal({ onClose, editShift }: Props) {
           </div>
 
           {/* Live preview */}
-          {hasPreview && (
+          {hasPreview && previewSplit && (
             <div
               style={{
                 textAlign: "center",
                 padding: "10px 0 4px",
                 display: "flex",
+                flexDirection: "column",
                 alignItems: "center",
-                justifyContent: "center",
-                gap: 8,
-                flexWrap: "wrap",
+                gap: 4,
               }}
             >
-              <span style={{ fontSize: 14, color: "#9aa6b4", fontFamily: "Rubik, sans-serif" }}>
-                {formatHoursAsClock(previewHours)} שעות · כ-₪{previewPay.toLocaleString("he-IL")}
-              </span>
-              {previewShabbat && (
-                <span
-                  style={{
-                    fontSize: 10,
-                    color: "#a78bfa",
-                    background: "rgba(167,139,250,.13)",
-                    borderRadius: 8,
-                    padding: "2px 8px",
-                    fontFamily: "Rubik, sans-serif",
-                    fontWeight: 500,
-                  }}
-                >
-                  שבת
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ fontSize: 14, color: "#9aa6b4", fontFamily: "Rubik, sans-serif" }}>
+                  {formatHoursAsClock(previewSplit.totalHours)} שעות · כ-₪{previewPay.toLocaleString("he-IL")}
+                </span>
+                {isPureShabbat && (
+                  <span
+                    style={{
+                      fontSize: 10,
+                      color: "#a78bfa",
+                      background: "rgba(167,139,250,.13)",
+                      borderRadius: 8,
+                      padding: "2px 8px",
+                      fontFamily: "Rubik, sans-serif",
+                      fontWeight: 500,
+                    }}
+                  >
+                    שבת
+                  </span>
+                )}
+              </div>
+              {isMixed && (
+                <span style={{ fontSize: 12, color: "#7c8896", fontFamily: "Rubik, sans-serif" }}>
+                  שבת {formatHoursAsClock(previewSplit.shabbatHours)} · רגיל {formatHoursAsClock(previewSplit.regularHours)}
                 </span>
               )}
             </div>

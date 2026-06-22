@@ -14,6 +14,8 @@ interface Shift {
   endTime: string;
   isShabbat: boolean;
   hours: number;
+  regularHours: number | null;
+  shabbatHours: number | null;
   createdAt: string;
 }
 
@@ -22,7 +24,6 @@ interface Props {
 }
 
 function fmtDate(dateStr: string): string {
-  // Parse as local midnight to get correct calendar day
   const d = new Date(dateStr.split("T")[0] + "T00:00:00");
   return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}`;
 }
@@ -39,6 +40,10 @@ function ShiftRow({ shift }: { shift: Shift }) {
   const [isPending, startTransition] = useTransition();
 
   const overnight = isOvernightShift(shift.startTime, shift.endTime);
+  const reg  = shift.regularHours ?? 0;
+  const shab = shift.shabbatHours ?? 0;
+  const pureShabbat = reg === 0 && shab > 0;
+  const mixed       = reg > 0  && shab > 0;
 
   async function handleDelete() {
     await fetch(`/api/shifts/${shift.id}`, { method: "DELETE" });
@@ -88,28 +93,44 @@ function ShiftRow({ shift }: { shift: Shift }) {
         </div>
 
         {/* Hours + badges */}
-        <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
-          <span
-            style={{ fontSize: 14, fontWeight: 600, color: "#f2f5f8", fontFamily: "Rubik, sans-serif" }}
-            dir="ltr"
-          >
-            {formatHoursAsClock(shift.hours)}
-          </span>
-          {shift.isShabbat && (
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", flexShrink: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
             <span
+              style={{ fontSize: 14, fontWeight: 600, color: "#f2f5f8", fontFamily: "Rubik, sans-serif" }}
+              dir="ltr"
+            >
+              {formatHoursAsClock(shift.hours)}
+            </span>
+            {pureShabbat && (
+              <span
+                style={{
+                  fontSize: 10,
+                  color: "#a78bfa",
+                  background: "rgba(167,139,250,.13)",
+                  borderRadius: 8,
+                  padding: "2px 8px",
+                  fontFamily: "Rubik, sans-serif",
+                  fontWeight: 500,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                שבת
+              </span>
+            )}
+          </div>
+          {mixed && (
+            <p
               style={{
-                fontSize: 10,
-                color: "#a78bfa",
-                background: "rgba(167,139,250,.13)",
-                borderRadius: 8,
-                padding: "2px 8px",
+                fontSize: 11,
+                color: "#9aa6b4",
                 fontFamily: "Rubik, sans-serif",
-                fontWeight: 500,
+                marginTop: 2,
                 whiteSpace: "nowrap",
+                direction: "rtl",
               }}
             >
-              שבת
-            </span>
+              שבת {formatHoursAsClock(shab)} · רגיל {formatHoursAsClock(reg)}
+            </p>
           )}
         </div>
 

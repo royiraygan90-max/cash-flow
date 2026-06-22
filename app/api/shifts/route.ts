@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { calcShiftHours, isShabbatShift } from "@/lib/shiftCalc";
+import { splitShiftHours } from "@/lib/shiftCalc";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -27,11 +27,18 @@ export async function POST(req: NextRequest) {
   }
 
   const dateObj = new Date(date);
-  const hours     = calcShiftHours(startTime, endTime);
-  const isShabbat = isShabbatShift(dateObj, startTime);
+  const split = splitShiftHours(dateObj, startTime, endTime);
 
   const shift = await prisma.shift.create({
-    data: { date: dateObj, startTime, endTime, hours, isShabbat },
+    data: {
+      date: dateObj,
+      startTime,
+      endTime,
+      hours:        split.totalHours,
+      isShabbat:    split.shabbatHours > 0,
+      regularHours: split.regularHours,
+      shabbatHours: split.shabbatHours,
+    },
   });
 
   return NextResponse.json(shift, { status: 201 });

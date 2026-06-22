@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Shift" ADD COLUMN "regularHours" DOUBLE PRECISION;
+ALTER TABLE "Shift" ADD COLUMN "shabbatHours" DOUBLE PRECISION;

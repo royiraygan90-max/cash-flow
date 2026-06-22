@@ -28,11 +28,13 @@ model Subscription {
 }
 
 model Shift {
-  id        String   @id @default(cuid())
-  date      DateTime
-  startTime String
-  endTime   String
-  isShabbat Boolean
-  hours     Float
-  createdAt DateTime @default(now())
+  id           String   @id @default(cuid())
+  date         DateTime
+  startTime    String
+  endTime      String
+  isShabbat    Boolean
+  hours        Float
+  regularHours Float?
+  shabbatHours Float?
+  createdAt    DateTime @default(now())
 }
