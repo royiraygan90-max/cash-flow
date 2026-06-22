@@ -3,6 +3,7 @@ import { Rubik } from "next/font/google";
 import "./globals.css";
 import AppNav from "@/app/components/AppNav";
 import SubscriptionsAutoApply from "@/app/components/SubscriptionsAutoApply";
+import ToastProvider from "@/app/components/Toast";
 
 const rubik = Rubik({
   subsets: ["latin", "hebrew"],
@@ -34,9 +35,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body className={rubik.variable} style={{ fontFamily: "Rubik, sans-serif" }}>
-        <AppNav />
-        <SubscriptionsAutoApply />
-        {children}
+        <ToastProvider>
+          <AppNav />
+          <SubscriptionsAutoApply />
+          {children}
+        </ToastProvider>
       </body>
     </html>
   );

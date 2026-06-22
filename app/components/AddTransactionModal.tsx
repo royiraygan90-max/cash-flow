@@ -4,6 +4,7 @@ import { useState, useEffect, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { CATEGORY_COLORS, DEFAULT_CATEGORY_COLOR } from "@/lib/categoryColors";
 import Icon from "./Icon";
+import { useToast } from "./Toast";
 
 const INCOME_CATEGORIES  = ["משכורת", "פרילנס", "מסחר", "אחר"];
 const EXPENSE_CATEGORIES = ["שכירות", "מזון", "תחבורה", "בילויים", "בריאות", "ביגוד", "חיסכון", "אחר"];
@@ -30,7 +31,9 @@ function toDateInputValue(dateStr: string): string {
 export default function AddTransactionModal({ onClose, editTransaction }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const { showToast } = useToast();
   const isEditing = !!editTransaction;
+  const [isSaving, setIsSaving] = useState(false);
 
   const [type, setType]           = useState<"income" | "expense">(editTransaction ? (editTransaction.type === "income" ? "income" : "expense") : "expense");
   const [date, setDate]           = useState(() => editTransaction ? toDateInputValue(editTransaction.date) : new Date().toISOString().split("T")[0]);
@@ -62,20 +65,34 @@ export default function AddTransactionModal({ onClose, editTransaction }: Props)
     e.preventDefault();
     if (!amount || parseFloat(amount) <= 0) return;
 
-    if (isEditing) {
-      await fetch(`/api/transactions/${editTransaction!.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ date, type, category, description, amount }),
+    setIsSaving(true);
+    try {
+      let res: Response;
+      if (isEditing) {
+        res = await fetch(`/api/transactions/${editTransaction!.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ date, type, category, description, amount }),
+        });
+      } else {
+        res = await fetch("/api/transactions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ date, type, category, description, amount }),
+        });
+      }
+      if (!res.ok) throw new Error("save failed");
+      showToast({
+        type: "success",
+        message: isEditing ? "העסקה עודכנה" : "העסקה נשמרה",
+        detail: `${type === "expense" ? "−" : "+"}${amount} ₪ · ${category}`,
       });
-    } else {
-      await fetch("/api/transactions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ date, type, category, description, amount }),
-      });
+      startTransition(() => { router.refresh(); onClose(); });
+    } catch {
+      showToast({ type: "error", message: "השמירה נכשלה", detail: "בדוק את החיבור ונסה שוב" });
+    } finally {
+      setIsSaving(false);
     }
-    startTransition(() => { router.refresh(); onClose(); });
   }
 
   const pillRow: React.CSSProperties = {
@@ -338,7 +355,7 @@ export default function AddTransactionModal({ onClose, editTransaction }: Props)
           {/* Save button */}
           <button
             type="submit"
-            disabled={isPending}
+            disabled={isSaving || isPending}
             style={{
               width: "100%",
               padding: 16,
@@ -346,16 +363,16 @@ export default function AddTransactionModal({ onClose, editTransaction }: Props)
               color: "#06231a",
               border: "none",
               borderRadius: 16,
-              cursor: isPending ? "not-allowed" : "pointer",
+              cursor: (isSaving || isPending) ? "not-allowed" : "pointer",
               fontWeight: 600,
               fontSize: 16,
               fontFamily: "Rubik, sans-serif",
-              opacity: isPending ? 0.7 : 1,
+              opacity: (isSaving || isPending) ? 0.7 : 1,
               marginTop: 4,
               transition: "opacity 0.15s",
             }}
           >
-            {isPending ? "שומר..." : isEditing ? "שמירת שינויים" : "שמירת עסקה"}
+            {(isSaving || isPending) ? "שומר..." : isEditing ? "שמירת שינויים" : "שמירת עסקה"}
           </button>
         </form>
       </div>
