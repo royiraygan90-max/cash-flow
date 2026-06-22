@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { CATEGORY_COLORS, DEFAULT_CATEGORY_COLOR } from "@/lib/categoryColors";
 import AddTransactionModal from "./AddTransactionModal";
+import Icon from "./Icon";
 
 interface Transaction {
   id: string;
@@ -16,11 +17,12 @@ interface Transaction {
 
 interface Props {
   transactions: Transaction[];
+  limit?: number;
 }
 
 function getWeekLabel(dateStr: string): string {
   const day = new Date(dateStr).getDate();
-  if (day <= 7) return "שבוע 1";
+  if (day <= 7)  return "שבוע 1";
   if (day <= 14) return "שבוע 2";
   if (day <= 21) return "שבוע 3";
   return "שבוע 4";
@@ -35,25 +37,8 @@ function fmtAmount(n: number): string {
   return n.toLocaleString("he-IL");
 }
 
-function CategoryTag({ category }: { category: string }) {
-  const c = CATEGORY_COLORS[category] ?? DEFAULT_CATEGORY_COLOR;
-  return (
-    <span
-      className="text-[0.65rem] md:text-[0.7rem]"
-      style={{
-        background: c.bg,
-        color: c.color,
-        border: `1px solid ${c.border}`,
-        padding: "2px 6px",
-        borderRadius: "4px",
-        fontWeight: 500,
-        fontFamily: "Inter, sans-serif",
-        flexShrink: 0,
-      }}
-    >
-      {category}
-    </span>
-  );
+function weekNet(txs: Transaction[]): number {
+  return txs.reduce((sum, t) => sum + (t.type === "income" ? t.amount : -t.amount), 0);
 }
 
 function TransactionRow({ tx }: { tx: Transaction }) {
@@ -62,182 +47,144 @@ function TransactionRow({ tx }: { tx: Transaction }) {
   const [editing, setEditing] = useState(false);
   const [isPending, startTransition] = useTransition();
 
+  const c = CATEGORY_COLORS[tx.category] ?? DEFAULT_CATEGORY_COLOR;
+
   async function handleDelete() {
     await fetch(`/api/transactions/${tx.id}`, { method: "DELETE" });
     startTransition(() => router.refresh());
   }
 
-  const iconButtonStyle: React.CSSProperties = {
-    background: "none",
-    border: "none",
-    cursor: "pointer",
-    color: "#d1d5db",
-    fontSize: "1rem",
-    lineHeight: 1,
-    padding: 0,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    transition: "color 0.1s, opacity 0.1s",
-  };
-
   return (
     <>
-      {editing && (
-        <AddTransactionModal editTransaction={tx} onClose={() => setEditing(false)} />
-      )}
+      {editing && <AddTransactionModal editTransaction={tx} onClose={() => setEditing(false)} />}
       <div
         className="group"
         style={{
           display: "flex",
           alignItems: "center",
-          borderBottom: "1px solid #f5f5f5",
-          transition: "background 0.1s",
+          borderBottom: "1px solid #161b22",
+          padding: "12px 16px",
+          gap: 10,
           direction: "rtl",
-          gap: "12px",
+          transition: "background 0.1s",
         }}
+        onMouseEnter={(e) => (e.currentTarget.style.background = "#1b2230")}
+        onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
       >
-        <div className="flex items-center gap-3 w-full px-4 py-3 md:px-6 md:py-[14px]"
-          onMouseEnter={(e) => (e.currentTarget.style.background = "#fafafa")}
-          onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+        {/* Icon chip */}
+        <div
+          style={{
+            width: 38,
+            height: 38,
+            borderRadius: 12,
+            background: c.bg,
+            color: c.color,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexShrink: 0,
+          }}
         >
-          {/* Amount */}
-          <span
-            className="text-[0.9rem] md:text-[0.95rem]"
-            style={{
-              fontFamily: "'JetBrains Mono', monospace",
-              fontWeight: 600,
-              color: tx.type === "income" ? "#00875a" : "#dc2626",
-              flexShrink: 0,
-              minWidth: "100px",
-              textAlign: "right",
-            }}
-          >
-            {tx.type === "income" ? "+" : "−"}₪{fmtAmount(tx.amount)}
-          </span>
+          <Icon name={c.icon} size={20} />
+        </div>
 
-          {/* Description */}
-          <span
-            className="text-[0.85rem] md:text-[0.9rem]"
+        {/* Description + subtext */}
+        <div style={{ flex: 1, overflow: "hidden" }}>
+          <p
             style={{
-              color: "#111111",
-              flex: 1,
+              fontSize: 14,
+              fontWeight: 500,
+              color: "#f2f5f8",
+              fontFamily: "Rubik, sans-serif",
               overflow: "hidden",
               textOverflow: "ellipsis",
               whiteSpace: "nowrap",
             }}
           >
             {tx.description || tx.category}
-          </span>
+          </p>
+          <p style={{ fontSize: 11, color: "#6b7785", fontFamily: "Rubik, sans-serif", marginTop: 2 }}>
+            {fmtDate(tx.date)} · {tx.category}
+          </p>
+        </div>
 
-          {/* Category tag */}
-          <CategoryTag category={tx.category} />
+        {/* Amount */}
+        <span
+          dir="ltr"
+          style={{
+            fontSize: 15,
+            fontWeight: 600,
+            color: tx.type === "income" ? "#34e0a1" : "#dfe5ec",
+            fontFamily: "Rubik, sans-serif",
+            flexShrink: 0,
+          }}
+        >
+          {tx.type === "income" ? "+" : "−"}₪{fmtAmount(tx.amount)}
+        </span>
 
-          {/* Date */}
-          <span
-            className="text-[0.7rem]"
-            style={{
-              fontFamily: "'JetBrains Mono', monospace",
-              color: "#9ca3af",
-              flexShrink: 0,
-              minWidth: "36px",
-              textAlign: "left",
-            }}
-          >
-            {fmtDate(tx.date)}
-          </span>
-
-          {/* Action buttons */}
-          <div
-            style={{
-              flexShrink: 0,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "flex-end",
-              gap: "4px",
-              width: "52px",
-            }}
-          >
-            {confirm ? (
-              <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
-                <button
-                  onClick={handleDelete}
-                  disabled={isPending}
-                  style={{
-                    background: "none",
-                    border: "none",
-                    cursor: "pointer",
-                    color: "#dc2626",
-                    fontSize: "0.7rem",
-                    fontFamily: "Inter, sans-serif",
-                    padding: 0,
-                  }}
-                >
-                  {isPending ? "..." : "כן"}
-                </button>
-                <button
-                  onClick={() => setConfirm(false)}
-                  style={{
-                    background: "none",
-                    border: "none",
-                    cursor: "pointer",
-                    color: "#9ca3af",
-                    fontSize: "0.7rem",
-                    padding: 0,
-                  }}
-                >
-                  לא
-                </button>
-              </div>
-            ) : (
-              <>
-                {/* Edit button */}
-                <button
-                  onClick={() => setEditing(true)}
-                  aria-label="ערוך"
-                  className="opacity-100 md:opacity-0 md:group-hover:opacity-100"
-                  style={iconButtonStyle}
-                  onMouseEnter={(e) => (e.currentTarget.style.color = "#2563eb")}
-                  onMouseLeave={(e) => (e.currentTarget.style.color = "#d1d5db")}
-                >
-                  <svg width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M9.5 1.5L11.5 3.5L4.5 10.5H2.5V8.5L9.5 1.5Z" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </button>
-                {/* Delete button */}
-                <button
-                  onClick={() => setConfirm(true)}
-                  aria-label="מחק"
-                  className="opacity-100 md:opacity-0 md:group-hover:opacity-100"
-                  style={{ ...iconButtonStyle, fontSize: "1rem" }}
-                  onMouseEnter={(e) => (e.currentTarget.style.color = "#dc2626")}
-                  onMouseLeave={(e) => (e.currentTarget.style.color = "#d1d5db")}
-                >
-                  ×
-                </button>
-              </>
-            )}
-          </div>
+        {/* Action buttons */}
+        <div style={{ display: "flex", gap: 2, flexShrink: 0 }}>
+          {confirm ? (
+            <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+              <button
+                onClick={handleDelete}
+                disabled={isPending}
+                style={{ background: "none", border: "none", cursor: "pointer", color: "#ff6b6b", fontSize: 12, fontFamily: "Rubik, sans-serif", padding: 0 }}
+              >
+                {isPending ? "..." : "כן"}
+              </button>
+              <button
+                onClick={() => setConfirm(false)}
+                style={{ background: "none", border: "none", cursor: "pointer", color: "#5c6776", fontSize: 12, padding: 0 }}
+              >
+                לא
+              </button>
+            </div>
+          ) : (
+            <>
+              <button
+                onClick={() => setEditing(true)}
+                aria-label="ערוך"
+                className="opacity-100 md:opacity-0 md:group-hover:opacity-100"
+                style={{ background: "none", border: "none", cursor: "pointer", color: "#5c6776", padding: 4, display: "flex", alignItems: "center", transition: "color 0.1s" }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = "#34e0a1")}
+                onMouseLeave={(e) => (e.currentTarget.style.color = "#5c6776")}
+              >
+                <Icon name="edit" size={16} />
+              </button>
+              <button
+                onClick={() => setConfirm(true)}
+                aria-label="מחק"
+                className="opacity-100 md:opacity-0 md:group-hover:opacity-100"
+                style={{ background: "none", border: "none", cursor: "pointer", color: "#5c6776", padding: 4, display: "flex", alignItems: "center", transition: "color 0.1s" }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = "#ff6b6b")}
+                onMouseLeave={(e) => (e.currentTarget.style.color = "#5c6776")}
+              >
+                <Icon name="delete" size={16} />
+              </button>
+            </>
+          )}
         </div>
       </div>
     </>
   );
 }
 
-export default function TransactionList({ transactions }: Props) {
+export default function TransactionList({ transactions, limit }: Props) {
+  const displayed = limit ? transactions.slice(0, limit) : transactions;
+
   if (transactions.length === 0) {
     return (
       <div
         style={{
-          background: "#ffffff",
-          border: "1px solid #e8e8e8",
-          borderRadius: "8px",
-          boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
-          padding: "48px",
+          background: "#11151b",
+          border: "1px solid #1b212a",
+          borderRadius: 20,
+          padding: 48,
           textAlign: "center",
-          color: "#9ca3af",
-          fontSize: "0.875rem",
-          fontFamily: "Inter, sans-serif",
+          color: "#6b7785",
+          fontSize: 14,
+          fontFamily: "Rubik, sans-serif",
         }}
       >
         אין עסקאות לחודש זה
@@ -246,7 +193,7 @@ export default function TransactionList({ transactions }: Props) {
   }
 
   const grouped: Record<string, Transaction[]> = {};
-  for (const tx of transactions) {
+  for (const tx of displayed) {
     const week = getWeekLabel(tx.date);
     if (!grouped[week]) grouped[week] = [];
     grouped[week].push(tx);
@@ -255,58 +202,40 @@ export default function TransactionList({ transactions }: Props) {
   return (
     <div
       style={{
-        background: "#ffffff",
-        border: "1px solid #e8e8e8",
-        borderRadius: "8px",
-        boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
+        background: "#1b2230",
+        border: "1px solid #20272f",
+        borderRadius: 20,
         overflow: "hidden",
       }}
     >
-      {/* Header */}
-      <div
-        style={{
-          padding: "20px 24px",
-          borderBottom: "1px solid #f0f0f0",
-        }}
-      >
-        <p
-          style={{
-            fontFamily: "Inter, sans-serif",
-            fontSize: "0.9rem",
-            fontWeight: 600,
-            color: "#111111",
-          }}
-        >
-          עסקאות
-        </p>
-      </div>
-
-      {Object.entries(grouped).map(([week, txs]) => (
-        <div key={week}>
-          {/* Week separator */}
-          <div
-            style={{
-              padding: "8px 24px",
-              background: "#f9f9f9",
-            }}
-          >
-            <span
+      {Object.entries(grouped).map(([week, txs]) => {
+        const net = weekNet(txs);
+        return (
+          <div key={week}>
+            <div
               style={{
-                fontFamily: "Inter, sans-serif",
-                fontSize: "0.7rem",
-                textTransform: "uppercase",
-                letterSpacing: "0.1em",
-                color: "#9ca3af",
+                padding: "8px 16px",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                background: "#161b22",
+                direction: "rtl",
               }}
             >
-              {week}
-            </span>
+              <span style={{ fontSize: 12, fontWeight: 500, color: "#7c8896", fontFamily: "Rubik, sans-serif" }}>
+                {week}
+              </span>
+              <span
+                dir="ltr"
+                style={{ fontSize: 12, fontWeight: 500, color: net >= 0 ? "#34e0a1" : "#ff8f8f", fontFamily: "Rubik, sans-serif" }}
+              >
+                {net >= 0 ? "+" : "−"}₪{Math.abs(net).toLocaleString("he-IL")}
+              </span>
+            </div>
+            {txs.map((tx) => <TransactionRow key={tx.id} tx={tx} />)}
           </div>
-          {txs.map((tx) => (
-            <TransactionRow key={tx.id} tx={tx} />
-          ))}
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
