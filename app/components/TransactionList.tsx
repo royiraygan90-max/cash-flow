@@ -170,9 +170,19 @@ function TransactionRow({ tx }: { tx: Transaction }) {
   );
 }
 
-export default function TransactionList({ transactions, limit }: Props) {
-  const displayed = limit ? transactions.slice(0, limit) : transactions;
+type TypeFilter = "all" | "income" | "expense";
 
+const FILTER_SEGMENTS: { label: string; value: TypeFilter }[] = [
+  { label: "הכל",     value: "all"     },
+  { label: "הוצאות",  value: "expense" },
+  { label: "הכנסות",  value: "income"  },
+];
+
+export default function TransactionList({ transactions }: Props) {
+  const [query, setQuery] = useState("");
+  const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
+
+  // Month is empty — preserve original empty state exactly
   if (transactions.length === 0) {
     return (
       <div
@@ -192,50 +202,186 @@ export default function TransactionList({ transactions, limit }: Props) {
     );
   }
 
+  const filtered = transactions.filter((tx) => {
+    if (typeFilter !== "all" && tx.type !== typeFilter) return false;
+    const q = query.trim().toLowerCase();
+    if (q === "") return true;
+    return (
+      tx.description.toLowerCase().includes(q) ||
+      tx.category.toLowerCase().includes(q)
+    );
+  });
+
   const grouped: Record<string, Transaction[]> = {};
-  for (const tx of displayed) {
+  for (const tx of filtered) {
     const week = getWeekLabel(tx.date);
     if (!grouped[week]) grouped[week] = [];
     grouped[week].push(tx);
   }
 
   return (
-    <div
-      style={{
-        background: "#1b2230",
-        border: "1px solid #20272f",
-        borderRadius: 20,
-        overflow: "hidden",
-      }}
-    >
-      {Object.entries(grouped).map(([week, txs]) => {
-        const net = weekNet(txs);
-        return (
-          <div key={week}>
-            <div
+    <div>
+      {/* ── Header: title + count ── */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+          direction: "rtl",
+          marginBottom: 10,
+        }}
+      >
+        <span
+          style={{
+            fontSize: 15,
+            fontWeight: 600,
+            color: "#f2f5f8",
+            fontFamily: "Rubik, sans-serif",
+          }}
+        >
+          עסקאות החודש
+        </span>
+        <span
+          style={{
+            fontSize: 12,
+            color: "#6b7785",
+            fontFamily: "Rubik, sans-serif",
+          }}
+        >
+          ({transactions.length})
+        </span>
+      </div>
+
+      {/* ── Search input ── */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          direction: "rtl",
+          background: "#11151b",
+          border: "1px solid #1b212a",
+          borderRadius: 14,
+          padding: "12px 16px",
+          marginBottom: 10,
+        }}
+      >
+        {/* Icon on the right in RTL (first child) */}
+        <span style={{ color: "#6b7785", display: "flex", flexShrink: 0 }}>
+          <Icon name="search" size={18} />
+        </span>
+        <input
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="חיפוש לפי תיאור או קטגוריה..."
+          dir="rtl"
+          style={{
+            flex: 1,
+            background: "transparent",
+            border: "none",
+            outline: "none",
+            color: "#f2f5f8",
+            fontSize: 14,
+            fontFamily: "Rubik, sans-serif",
+          }}
+        />
+      </div>
+
+      {/* ── Segmented type filter ── */}
+      <div
+        style={{
+          display: "flex",
+          background: "#11151b",
+          border: "1px solid #1b212a",
+          borderRadius: 16,
+          padding: 5,
+          gap: 4,
+          marginBottom: 14,
+        }}
+      >
+        {FILTER_SEGMENTS.map(({ label, value }) => {
+          const active = typeFilter === value;
+          return (
+            <button
+              key={value}
+              onClick={() => setTypeFilter(value)}
               style={{
-                padding: "8px 16px",
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                background: "#161b22",
-                direction: "rtl",
+                flex: 1,
+                fontSize: 13,
+                fontFamily: "Rubik, sans-serif",
+                fontWeight: active ? 500 : 400,
+                color: active ? "#f2f5f8" : "#7c8896",
+                background: active ? "#1b2230" : "transparent",
+                border: active ? "1px solid #20272f" : "1px solid transparent",
+                borderRadius: 11,
+                padding: "7px 12px",
+                cursor: "pointer",
+                transition: "background 0.15s, color 0.15s",
+                minHeight: 36,
               }}
             >
-              <span style={{ fontSize: 12, fontWeight: 500, color: "#7c8896", fontFamily: "Rubik, sans-serif" }}>
-                {week}
-              </span>
-              <span
-                dir="ltr"
-                style={{ fontSize: 12, fontWeight: 500, color: net >= 0 ? "#34e0a1" : "#ff8f8f", fontFamily: "Rubik, sans-serif" }}
-              >
-                {net >= 0 ? "+" : "−"}₪{Math.abs(net).toLocaleString("he-IL")}
-              </span>
-            </div>
-            {txs.map((tx) => <TransactionRow key={tx.id} tx={tx} />)}
-          </div>
-        );
-      })}
+              {label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* ── List card ── */}
+      {filtered.length === 0 ? (
+        <div
+          style={{
+            background: "#11151b",
+            border: "1px solid #1b212a",
+            borderRadius: 20,
+            padding: 48,
+            textAlign: "center",
+            color: "#6b7785",
+            fontSize: 14,
+            fontFamily: "Rubik, sans-serif",
+          }}
+        >
+          לא נמצאו עסקאות התואמות לחיפוש
+        </div>
+      ) : (
+        <div
+          style={{
+            background: "#1b2230",
+            border: "1px solid #20272f",
+            borderRadius: 20,
+            overflow: "hidden",
+          }}
+        >
+          {Object.entries(grouped).map(([week, txs]) => {
+            const net = weekNet(txs);
+            return (
+              <div key={week}>
+                <div
+                  style={{
+                    padding: "8px 16px",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    background: "#161b22",
+                    direction: "rtl",
+                  }}
+                >
+                  <span style={{ fontSize: 12, fontWeight: 500, color: "#7c8896", fontFamily: "Rubik, sans-serif" }}>
+                    {week}
+                  </span>
+                  <span
+                    dir="ltr"
+                    style={{ fontSize: 12, fontWeight: 500, color: net >= 0 ? "#34e0a1" : "#ff8f8f", fontFamily: "Rubik, sans-serif" }}
+                  >
+                    {net >= 0 ? "+" : "−"}₪{Math.abs(net).toLocaleString("he-IL")}
+                  </span>
+                </div>
+                {txs.map((tx) => <TransactionRow key={tx.id} tx={tx} />)}
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
