@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import MonthNavigator from "@/app/components/MonthNavigator";
 import KPIStrip from "@/app/components/KPIStrip";
-import { SixMonthBarChart, ExpenseDonutChart } from "@/app/components/Charts";
+import { SixMonthBarChart } from "@/app/components/Charts";
 import TransactionList from "@/app/components/TransactionList";
 
 const HEBREW_MONTHS_SHORT = [
@@ -69,7 +69,6 @@ export default async function DashboardPage({ searchParams }: PageProps) {
 
       <div className="flex flex-col md:grid md:grid-cols-[55fr_45fr] gap-4 mb-6">
         <SixMonthBarChart data={barData} />
-        <ExpenseDonutChart data={pieData} />
       </div>
 
       <TransactionList transactions={serializedTransactions} />
