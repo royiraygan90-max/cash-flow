@@ -9,9 +9,10 @@ import Icon from "./Icon";
 const AddTransactionModal = dynamic(() => import("./AddTransactionModal"), { ssr: false });
 
 const NAV_ITEMS = [
-  { href: "/",            label: "בית",       icon: "home" },
-  { href: "/statistics",  label: "סטטיסטיקה", icon: "monitoring" },
-  { href: "/subscriptions", label: "מנויים",  icon: "autorenew" },
+  { href: "/",              label: "בית",       icon: "home" },
+  { href: "/statistics",   label: "סטטיסטיקה", icon: "monitoring" },
+  { href: "/insights",     label: "תובנות",    icon: "notifications" },
+  { href: "/subscriptions", label: "מנויים",   icon: "autorenew" },
 ];
 
 // Mobile: first FAB_SPLIT items appear on the right side of FAB (in RTL);

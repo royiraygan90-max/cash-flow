@@ -110,16 +110,6 @@ export default function MonthNavigator({ month, year }: Props) {
         </button>
 
         <button
-          onClick={() => router.push("/insights")}
-          style={utilityPill}
-          onMouseEnter={(e) => (e.currentTarget.style.color = "#f2f5f8")}
-          onMouseLeave={(e) => (e.currentTarget.style.color = "#9aa6b4")}
-        >
-          <Icon name="notifications" size={14} />
-          תובנות
-        </button>
-
-        <button
           onClick={() => window.open("/api/export", "_blank")}
           style={utilityPill}
           onMouseEnter={(e) => (e.currentTarget.style.color = "#f2f5f8")}
