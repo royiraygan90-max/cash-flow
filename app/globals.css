@@ -3,14 +3,33 @@
 @tailwind utilities;
 
 :root {
-  --bg: #f5f5f5;
-  --surface: #ffffff;
-  --border: #e8e8e8;
-  --green: #00875a;
-  --red: #dc2626;
-  --text-primary: #111111;
-  --text-secondary: #6b7280;
-  --text-muted: #9ca3af;
+  --bg-primary:    #0d1014;
+  --bg-secondary:  #11151b;
+  --bg-tertiary:   #161b22;
+  --bg-card:       #1b2230;
+  --bg-bar:        #0b0e12;
+  --card-border:   #20272f;
+  --card-gradient: linear-gradient(155deg, #171d26, #10151c);
+
+  --text-primary:   #f2f5f8;
+  --text-secondary: #cdd5de;
+  --text-muted:     #9aa6b4;
+  --text-disabled:  #6b7785;
+  --text-faint:     #5c6776;
+
+  --income:         #34e0a1;
+  --income-bg:      #101a16;
+  --income-border:  #1c3329;
+  --expense:        #ff6b6b;
+  --expense-light:  #ff8f8f;
+  --expense-bg:     #1c1316;
+  --expense-border: #3a2226;
+
+  --accent-purple: #a78bfa;
+  --accent-pink:   #f472b6;
+  --accent-blue:   #52b9ff;
+  --accent-orange: #ffb454;
+  --accent-indigo: #818cf8;
 }
 
 * {
@@ -21,18 +40,12 @@
 
 html,
 body {
-  background: var(--bg);
+  background: var(--bg-primary);
   color: var(--text-primary);
-  font-family: var(--font-inter), sans-serif;
+  font-family: 'Rubik', sans-serif;
   min-height: 100vh;
 }
 
-::-webkit-scrollbar {
-  width: 4px;
-}
-::-webkit-scrollbar-track {
-  background: var(--bg);
-}
-::-webkit-scrollbar-thumb {
-  background: var(--border);
-}
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: var(--bg-primary); }
+::-webkit-scrollbar-thumb { background: var(--bg-tertiary); }
