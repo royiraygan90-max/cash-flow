@@ -1,7 +1,9 @@
 import { prisma } from "@/lib/prisma";
+import { computeSalary } from "@/lib/salaryCalc";
 import MonthNavigator from "@/app/components/MonthNavigator";
 import BalanceHeroCard from "@/app/components/BalanceHeroCard";
 import InOutRow from "@/app/components/InOutRow";
+import ExpectedSalaryCard from "@/app/components/ExpectedSalaryCard";
 import { SixMonthBarChart } from "@/app/components/Charts";
 import CategoryBreakdown from "@/app/components/CategoryBreakdown";
 import TransactionList from "@/app/components/TransactionList";
@@ -32,6 +34,11 @@ export default async function DashboardPage({ searchParams }: PageProps) {
 
   const totalIncome   = currentTransactions.filter((t) => t.type === "income").reduce((s, t) => s + t.amount, 0);
   const totalExpenses = currentTransactions.filter((t) => t.type === "expense").reduce((s, t) => s + t.amount, 0);
+
+  const monthShifts   = await prisma.shift.findMany({ where: { date: { gte: start, lt: end } } });
+  const regularHours  = monthShifts.reduce((s, sh) => s + sh.regularHours, 0);
+  const shabbatHours  = monthShifts.reduce((s, sh) => s + sh.shabbatHours, 0);
+  const salary        = computeSalary(regularHours, shabbatHours);
 
   const barData = await Promise.all(
     Array.from({ length: 6 }, (_, i) => {
@@ -74,6 +81,17 @@ export default async function DashboardPage({ searchParams }: PageProps) {
       <BalanceHeroCard totalIncome={totalIncome} totalExpenses={totalExpenses} />
 
       <InOutRow totalIncome={totalIncome} totalExpenses={totalExpenses} />
+
+      {(regularHours + shabbatHours) > 0 && (
+        <ExpectedSalaryCard
+          regularHours={regularHours}
+          shabbatHours={shabbatHours}
+          gross={salary.gross}
+          net={salary.net}
+          month={month}
+          year={year}
+        />
+      )}
 
       <SixMonthBarChart data={barData} />
 
