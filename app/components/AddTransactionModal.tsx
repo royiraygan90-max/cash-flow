@@ -234,6 +234,7 @@ export default function AddTransactionModal({ onClose, editTransaction }: Props)
                   type="text"
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
+                  required
                   style={{
                     gridColumn: "1 / -1",
                     background: "#11151b",
@@ -307,9 +308,9 @@ export default function AddTransactionModal({ onClose, editTransaction }: Props)
                 color: "#f2f5f8",
                 fontSize: 14,
                 fontFamily: "Rubik, sans-serif",
-                textAlign: "left",
+                textAlign: "right",
                 flex: 1,
-                direction: "ltr",
+                direction: "rtl",
               }}
             />
           </div>

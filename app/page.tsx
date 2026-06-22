@@ -81,23 +81,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
 
       {/* Recent transactions */}
       <div style={{ marginBottom: 12 }}>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: 10,
-            direction: "rtl",
-          }}
-        >
-          <span style={{ fontSize: 13, fontWeight: 600, color: "#f2f5f8", fontFamily: "Rubik, sans-serif" }}>
-            עסקאות אחרונות
-          </span>
-          <a href="#" style={{ fontSize: 12, color: "#34e0a1", fontFamily: "Rubik, sans-serif", textDecoration: "none" }}>
-            הצג הכל
-          </a>
-        </div>
-        <TransactionList transactions={serializedTransactions} limit={5} />
+        <TransactionList transactions={serializedTransactions} />
       </div>
     </main>
   );

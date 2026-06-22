@@ -11,7 +11,7 @@ function fmt(n: number): string {
 
 export default function BalanceHeroCard({ totalIncome, totalExpenses }: Props) {
   const balance = totalIncome - totalExpenses;
-  const isPositive = balance >= 0;
+  const isPositive = balance > 0;
 
   return (
     <div
