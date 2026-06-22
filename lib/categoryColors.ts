@@ -2,32 +2,37 @@ export interface CategoryColor {
   bg: string;
   color: string;
   border: string;
+  icon: string;
 }
 
-const GRAY: CategoryColor = { bg: "#f3f4f6", color: "#6b7280", border: "#e5e7eb" };
+const GRAY: CategoryColor = {
+  bg: "#9aa6b422",
+  color: "#9aa6b4",
+  border: "#9aa6b444",
+  icon: "category",
+};
 
 export const CATEGORY_COLORS: Record<string, CategoryColor> = {
-  // Subscriptions
-  מנוי:    { bg: "#ede9fe", color: "#7c3aed", border: "#ddd6fe" },
+  // Income
+  משכורת: { bg: "#34e0a122", color: "#34e0a1", border: "#34e0a144", icon: "payments" },
+  פרילנס: { bg: "#34e0a122", color: "#34e0a1", border: "#34e0a144", icon: "payments" },
+  מסחר:   { bg: "#34e0a122", color: "#34e0a1", border: "#34e0a144", icon: "payments" },
   // Food
-  אוכל:    { bg: "#fff7ed", color: "#ea580c", border: "#fed7aa" },
-  מזון:    { bg: "#fffbeb", color: "#d97706", border: "#fde68a" },
-  // Transport
-  תחבורה:  { bg: "#eff6ff", color: "#2563eb", border: "#bfdbfe" },
-  // Health
-  בריאות:  { bg: "#f0fdf4", color: "#16a34a", border: "#bbf7d0" },
-  // Rent
-  שכירות:  { bg: "#eef2ff", color: "#4338ca", border: "#c7d2fe" },
+  מזון:    { bg: "#a78bfa22", color: "#a78bfa", border: "#a78bfa44", icon: "restaurant" },
   // Entertainment
-  בילויים: { bg: "#fdf2f8", color: "#db2777", border: "#fbcfe8" },
+  בילויים: { bg: "#f472b622", color: "#f472b6", border: "#f472b644", icon: "celebration" },
+  // Transport
+  תחבורה:  { bg: "#52b9ff22", color: "#52b9ff", border: "#52b9ff44", icon: "directions_car" },
+  // Health
+  בריאות:  { bg: "#ffb45422", color: "#ffb454", border: "#ffb45444", icon: "favorite" },
+  // Housing
+  שכירות:  { bg: "#52b9ff22", color: "#52b9ff", border: "#52b9ff44", icon: "home_work" },
   // Clothing
-  ביגוד:   { bg: "#fff1f2", color: "#e11d48", border: "#fecdd3" },
+  ביגוד:   { bg: "#f472b622", color: "#f472b6", border: "#f472b644", icon: "checkroom" },
   // Savings
-  חיסכון:  { bg: "#ecfeff", color: "#0891b2", border: "#a5f3fc" },
-  // Income categories
-  משכורת:  { bg: "#ecfdf5", color: "#059669", border: "#a7f3d0" },
-  פרילנס:  { bg: "#f0fdfa", color: "#0d9488", border: "#99f6e4" },
-  מסחר:    { bg: "#f0f9ff", color: "#0284c7", border: "#bae6fd" },
+  חיסכון:  { bg: "#34e0a122", color: "#34e0a1", border: "#34e0a144", icon: "savings" },
+  // Subscription
+  מנוי:    { bg: "#818cf822", color: "#818cf8", border: "#818cf844", icon: "autorenew" },
   // Fallback
   אחר:     GRAY,
 };
