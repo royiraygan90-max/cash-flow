@@ -6,8 +6,41 @@ interface Props {
 }
 
 export default function ShiftSummary({ regularHours, shabbatHours }: Props) {
+  const totalHours = regularHours + shabbatHours;
+
   return (
-    <div style={{ display: "flex", gap: 12, marginBottom: 12 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 12 }}>
+      {/* Total hours card */}
+      <div
+        style={{
+          background: "#1b2230",
+          border: "1px solid #20272f",
+          borderRadius: 20,
+          padding: 16,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          direction: "rtl",
+        }}
+      >
+        <span style={{ fontSize: 13, color: "#9aa6b4", fontFamily: "Rubik, sans-serif" }}>
+          סה״כ שעות החודש
+        </span>
+        <span
+          style={{
+            fontSize: 20,
+            fontWeight: 600,
+            color: "#f2f5f8",
+            fontFamily: "Rubik, sans-serif",
+            direction: "ltr",
+          }}
+        >
+          {formatHoursAsClock(totalHours)}
+        </span>
+      </div>
+
+      {/* Regular + Shabbat split row */}
+      <div style={{ display: "flex", gap: 12 }}>
       {/* Regular hours card */}
       <div
         style={{
@@ -58,6 +91,7 @@ export default function ShiftSummary({ regularHours, shabbatHours }: Props) {
         >
           {formatHoursAsClock(shabbatHours)}
         </p>
+      </div>
       </div>
     </div>
   );

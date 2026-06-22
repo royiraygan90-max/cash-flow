@@ -12,7 +12,7 @@ export function calcShiftHours(startTime: string, endTime: string): number {
 export function isShabbatShift(date: Date, startTime: string): boolean {
   const day = date.getDay(); // 0=Sunday … 6=Saturday
   const hour = parseInt(startTime.split(":")[0], 10);
-  return (day === 5 && hour >= 19) || (day === 6 && hour < 4);
+  return (day === 5 && hour >= 19) || day === 6 || (day === 0 && hour < 4);
 }
 
 export function isOvernightShift(startTime: string, endTime: string): boolean {
