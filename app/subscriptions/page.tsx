@@ -357,7 +357,7 @@ export default function SubscriptionsPage() {
                   onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
                   required
                   placeholder="Netflix, גים..."
-                  style={{ background: "transparent", border: "none", outline: "none", color: "#f2f5f8", fontSize: 14, fontFamily: "Rubik, sans-serif", textAlign: "left", flex: 1, direction: "ltr" }}
+                  style={{ background: "transparent", border: "none", outline: "none", color: "#f2f5f8", fontSize: 16, fontFamily: "Rubik, sans-serif", textAlign: "left", flex: 1, direction: "ltr" }}
                 />
               </div>
 
@@ -369,7 +369,7 @@ export default function SubscriptionsPage() {
                   value={form.amount}
                   onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))}
                   required min="0" step="0.01" placeholder="0"
-                  style={{ background: "transparent", border: "none", outline: "none", color: "#f2f5f8", fontSize: 14, fontFamily: "Rubik, sans-serif", textAlign: "left", flex: 1, direction: "ltr" }}
+                  style={{ background: "transparent", border: "none", outline: "none", color: "#f2f5f8", fontSize: 16, fontFamily: "Rubik, sans-serif", textAlign: "left", flex: 1, direction: "ltr" }}
                 />
               </div>
 
@@ -381,7 +381,7 @@ export default function SubscriptionsPage() {
                   value={form.dayOfMonth}
                   onChange={(e) => setForm((f) => ({ ...f, dayOfMonth: e.target.value }))}
                   required min="1" max="31" placeholder="1"
-                  style={{ background: "transparent", border: "none", outline: "none", color: "#f2f5f8", fontSize: 14, fontFamily: "Rubik, sans-serif", textAlign: "left", flex: 1, direction: "ltr" }}
+                  style={{ background: "transparent", border: "none", outline: "none", color: "#f2f5f8", fontSize: 16, fontFamily: "Rubik, sans-serif", textAlign: "left", flex: 1, direction: "ltr" }}
                 />
               </div>
 
@@ -393,7 +393,7 @@ export default function SubscriptionsPage() {
                   value={form.category}
                   onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
                   placeholder="מנוי"
-                  style={{ background: "transparent", border: "none", outline: "none", color: "#f2f5f8", fontSize: 14, fontFamily: "Rubik, sans-serif", textAlign: "left", flex: 1, direction: "ltr" }}
+                  style={{ background: "transparent", border: "none", outline: "none", color: "#f2f5f8", fontSize: 16, fontFamily: "Rubik, sans-serif", textAlign: "left", flex: 1, direction: "ltr" }}
                 />
               </div>
 

@@ -259,7 +259,7 @@ export default function AddTransactionModal({ onClose, editTransaction }: Props)
                     color: "#f2f5f8",
                     borderRadius: 14,
                     padding: "12px 16px",
-                    fontSize: 14,
+                    fontSize: 16,
                     fontFamily: "Rubik, sans-serif",
                     outline: "none",
                   }}
@@ -323,7 +323,7 @@ export default function AddTransactionModal({ onClose, editTransaction }: Props)
                 border: "none",
                 outline: "none",
                 color: "#f2f5f8",
-                fontSize: 14,
+                fontSize: 16,
                 fontFamily: "Rubik, sans-serif",
                 textAlign: "right",
                 flex: 1,
@@ -345,7 +345,7 @@ export default function AddTransactionModal({ onClose, editTransaction }: Props)
                 border: "none",
                 outline: "none",
                 color: "#f2f5f8",
-                fontSize: 14,
+                fontSize: 16,
                 fontFamily: "Rubik, sans-serif",
                 colorScheme: "dark",
               }}

@@ -23,7 +23,7 @@ const selectStyle: React.CSSProperties = {
   borderRadius: 14,
   padding: "10px 16px 10px 36px",
   color: "#f2f5f8",
-  fontSize: 14,
+  fontSize: 16,
   fontFamily: "Rubik, sans-serif",
   fontWeight: 500,
   appearance: "none",

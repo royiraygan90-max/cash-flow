@@ -26,7 +26,7 @@ export default function RangeSelect({ currentRange, currentView }: Props) {
           borderRadius: 12,
           padding: "10px 14px 10px 36px",
           color: "#cdd5de",
-          fontSize: 13,
+          fontSize: 16,
           fontFamily: "Rubik, sans-serif",
           appearance: "none",
           WebkitAppearance: "none",

@@ -282,7 +282,7 @@ export default function TransactionList({ transactions }: Props) {
             border: "none",
             outline: "none",
             color: "#f2f5f8",
-            fontSize: 14,
+            fontSize: 16,
             fontFamily: "Rubik, sans-serif",
           }}
         />
