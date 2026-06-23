@@ -34,8 +34,13 @@ export default async function DashboardPage({ searchParams }: PageProps) {
     orderBy: { date: "desc" },
   });
 
-  const totalIncome   = currentTransactions.filter((t) => t.type === "income").reduce((s, t) => s + t.amount, 0);
-  const totalExpenses = currentTransactions.filter((t) => t.type === "expense").reduce((s, t) => s + t.amount, 0);
+  const freelanceExpense  = currentTransactions.filter((t) => t.type === "expense" && t.category === "פרילנס").reduce((s, t) => s + t.amount, 0);
+  const freelanceIncome   = currentTransactions.filter((t) => t.type === "income"  && t.category === "פרילנס").reduce((s, t) => s + t.amount, 0);
+
+  const totalIncomeRaw   = currentTransactions.filter((t) => t.type === "income").reduce((s, t) => s + t.amount, 0);
+  const totalExpensesRaw = currentTransactions.filter((t) => t.type === "expense").reduce((s, t) => s + t.amount, 0);
+  const totalIncome   = totalIncomeRaw - freelanceExpense;
+  const totalExpenses = totalExpensesRaw - freelanceExpense;
 
   const monthShifts       = await prisma.shift.findMany({ where: { date: { gte: start, lt: end } } });
   const regularHours      = monthShifts.reduce((s, sh) => s + sh.regularHours, 0);
@@ -50,21 +55,24 @@ export default async function DashboardPage({ searchParams }: PageProps) {
       const d = new Date(year, month - 1 - 5 + i, 1);
       const s = new Date(d.getFullYear(), d.getMonth(), 1);
       const e = new Date(d.getFullYear(), d.getMonth() + 1, 1);
-      return prisma.transaction.findMany({ where: { date: { gte: s, lt: e } } }).then((txs) => ({
-        name: HEBREW_MONTHS_SHORT[d.getMonth()],
-        income:   txs.filter((t) => t.type === "income").reduce((sum, t) => sum + t.amount, 0),
-        expenses: txs.filter((t) => t.type === "expense").reduce((sum, t) => sum + t.amount, 0),
-      }));
+      return prisma.transaction.findMany({ where: { date: { gte: s, lt: e } } }).then((txs) => {
+        const monthFreelanceExpense = txs.filter((t) => t.type === "expense" && t.category === "פרילנס").reduce((sum, t) => sum + t.amount, 0);
+        const monthIncomeRaw   = txs.filter((t) => t.type === "income").reduce((sum, t) => sum + t.amount, 0);
+        const monthExpensesRaw = txs.filter((t) => t.type === "expense").reduce((sum, t) => sum + t.amount, 0);
+        return {
+          name: HEBREW_MONTHS_SHORT[d.getMonth()],
+          income:   monthIncomeRaw - monthFreelanceExpense,
+          expenses: monthExpensesRaw - monthFreelanceExpense,
+        };
+      });
     })
   );
 
   const tradingExpense    = currentTransactions.filter((t) => t.type === "expense" && t.category === "מסחר").reduce((s, t) => s + t.amount, 0);
   const tradingIncome     = currentTransactions.filter((t) => t.type === "income"  && t.category === "מסחר").reduce((s, t) => s + t.amount, 0);
-  const freelanceExpense  = currentTransactions.filter((t) => t.type === "expense" && t.category === "פרילנס").reduce((s, t) => s + t.amount, 0);
-  const freelanceIncome   = currentTransactions.filter((t) => t.type === "income"  && t.category === "פרילנס").reduce((s, t) => s + t.amount, 0);
 
   const expenseByCategory: Record<string, number> = {};
-  for (const tx of currentTransactions.filter((t) => t.type === "expense")) {
+  for (const tx of currentTransactions.filter((t) => t.type === "expense" && t.category !== "פרילנס")) {
     expenseByCategory[tx.category] = (expenseByCategory[tx.category] ?? 0) + tx.amount;
   }
   const pieData = Object.entries(expenseByCategory).map(([name, value]) => ({ name, value }));
