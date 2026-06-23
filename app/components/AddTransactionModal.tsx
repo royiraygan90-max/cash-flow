@@ -7,7 +7,7 @@ import Icon from "./Icon";
 import { useToast } from "./Toast";
 
 const INCOME_CATEGORIES  = ["משכורת", "פרילנס", "מסחר", "אחר"];
-const EXPENSE_CATEGORIES = ["שכירות", "מזון", "תחבורה", "בילויים", "בריאות", "ביגוד", "חיסכון", "אחר"];
+const EXPENSE_CATEGORIES = ["שכירות", "מזון", "תחבורה", "בילויים", "בריאות", "ביגוד", "חיסכון", "מסחר", "אחר"];
 
 interface EditTransaction {
   id: string;
