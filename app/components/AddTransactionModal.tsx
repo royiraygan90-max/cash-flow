@@ -218,11 +218,10 @@ export default function AddTransactionModal({ onClose, editTransaction }: Props)
                 {type === "expense" ? "−" : "+"}
               </span>
               <input
-                type="number"
+                type="text"
+                inputMode="decimal"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                min="0"
-                step="0.01"
                 required
                 placeholder="0"
                 style={{

@@ -365,10 +365,11 @@ export default function SubscriptionsPage() {
               <div style={pillRow}>
                 <span style={{ fontSize: 13, color: "#7c8896", fontFamily: "Rubik, sans-serif" }}>סכום ₪</span>
                 <input
-                  type="number"
+                  type="text"
+                  inputMode="decimal"
                   value={form.amount}
                   onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))}
-                  required min="0" step="0.01" placeholder="0"
+                  required placeholder="0"
                   style={{ background: "transparent", border: "none", outline: "none", color: "#f2f5f8", fontSize: 16, fontFamily: "Rubik, sans-serif", textAlign: "left", flex: 1, direction: "ltr" }}
                 />
               </div>
@@ -377,10 +378,11 @@ export default function SubscriptionsPage() {
               <div style={pillRow}>
                 <span style={{ fontSize: 13, color: "#7c8896", fontFamily: "Rubik, sans-serif" }}>יום בחודש</span>
                 <input
-                  type="number"
+                  type="text"
+                  inputMode="numeric"
                   value={form.dayOfMonth}
                   onChange={(e) => setForm((f) => ({ ...f, dayOfMonth: e.target.value }))}
-                  required min="1" max="31" placeholder="1"
+                  required placeholder="1"
                   style={{ background: "transparent", border: "none", outline: "none", color: "#f2f5f8", fontSize: 16, fontFamily: "Rubik, sans-serif", textAlign: "left", flex: 1, direction: "ltr" }}
                 />
               </div>
