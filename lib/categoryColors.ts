@@ -15,7 +15,7 @@ const GRAY: CategoryColor = {
 export const CATEGORY_COLORS: Record<string, CategoryColor> = {
   // Income
   משכורת: { bg: "#34e0a122", color: "#34e0a1", border: "#34e0a144", icon: "payments" },
-  פרילנס: { bg: "#34e0a122", color: "#34e0a1", border: "#34e0a144", icon: "payments" },
+  פרילנס: { bg: "#fbbf2422", color: "#fbbf24", border: "#fbbf2444", icon: "work" },
   מסחר:   { bg: "#22d3ee22", color: "#22d3ee", border: "#22d3ee44", icon: "candlestick_chart" },
   // Food
   מזון:    { bg: "#a78bfa22", color: "#a78bfa", border: "#a78bfa44", icon: "restaurant" },
