@@ -7,6 +7,7 @@ import ExpectedSalaryCard from "@/app/components/ExpectedSalaryCard";
 import { SixMonthBarChart } from "@/app/components/Charts";
 import CategoryBreakdown from "@/app/components/CategoryBreakdown";
 import TradingPnlCard from "@/app/components/TradingPnlCard";
+import FreelancePnlCard from "@/app/components/FreelancePnlCard";
 import TransactionList from "@/app/components/TransactionList";
 
 const HEBREW_MONTHS_SHORT = [
@@ -57,8 +58,10 @@ export default async function DashboardPage({ searchParams }: PageProps) {
     })
   );
 
-  const tradingExpense = currentTransactions.filter((t) => t.type === "expense" && t.category === "מסחר").reduce((s, t) => s + t.amount, 0);
-  const tradingIncome  = currentTransactions.filter((t) => t.type === "income"  && t.category === "מסחר").reduce((s, t) => s + t.amount, 0);
+  const tradingExpense    = currentTransactions.filter((t) => t.type === "expense" && t.category === "מסחר").reduce((s, t) => s + t.amount, 0);
+  const tradingIncome     = currentTransactions.filter((t) => t.type === "income"  && t.category === "מסחר").reduce((s, t) => s + t.amount, 0);
+  const freelanceExpense  = currentTransactions.filter((t) => t.type === "expense" && t.category === "פרילנס").reduce((s, t) => s + t.amount, 0);
+  const freelanceIncome   = currentTransactions.filter((t) => t.type === "income"  && t.category === "פרילנס").reduce((s, t) => s + t.amount, 0);
 
   const expenseByCategory: Record<string, number> = {};
   for (const tx of currentTransactions.filter((t) => t.type === "expense")) {
@@ -108,6 +111,10 @@ export default async function DashboardPage({ searchParams }: PageProps) {
 
       {(tradingExpense > 0 || tradingIncome > 0) && (
         <TradingPnlCard expense={tradingExpense} income={tradingIncome} />
+      )}
+
+      {(freelanceExpense > 0 || freelanceIncome > 0) && (
+        <FreelancePnlCard expense={freelanceExpense} income={freelanceIncome} />
       )}
 
       {/* Recent transactions */}
