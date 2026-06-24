@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { HEBREW_MONTHS_FULL } from "@/lib/hebrewDates";
+import { isSubscriptionInRange } from "@/lib/subscriptionRange";
 
 export type Insight = {
   id: string;
@@ -147,6 +148,8 @@ export async function computeInsights(): Promise<Insight[]> {
       targetMonthIdx = currentMonthIdx === 11 ? 0 : currentMonthIdx + 1;
     }
 
+    if (!isSubscriptionInRange(sub, targetYear, targetMonthIdx)) continue;
+
     const daysInTargetMonth = new Date(targetYear, targetMonthIdx + 1, 0).getDate();
     const clampedDay = Math.min(sub.dayOfMonth, daysInTargetMonth);
     const billingDate = new Date(targetYear, targetMonthIdx, clampedDay);
@@ -177,13 +180,17 @@ export async function computeInsights(): Promise<Insight[]> {
   }
 
   // ── d) SUBSCRIPTIONS YEARLY SUMMARY ───────────────────────────────────────
-  if (activeSubs.length > 0) {
+  const activeSubsNow = activeSubs.filter((sub) =>
+    isSubscriptionInRange(sub, year, month - 1) // month is 1-indexed
+  );
+
+  if (activeSubsNow.length > 0) {
     const yearlyTotal = Math.round(
-      activeSubs.reduce((s, sub) => s + sub.amount, 0) * 12
+      activeSubsNow.reduce((s, sub) => s + sub.amount, 0) * 12
     );
-    const largest = activeSubs.reduce(
+    const largest = activeSubsNow.reduce(
       (max, sub) => (sub.amount > max.amount ? sub : max),
-      activeSubs[0]
+      activeSubsNow[0]
     );
     insights.push({
       id: "subs-yearly",
