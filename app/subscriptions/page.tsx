@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { CATEGORY_COLORS, DEFAULT_CATEGORY_COLOR } from "@/lib/categoryColors";
 import Icon from "@/app/components/Icon";
+import { getSubValidityStatus } from "@/lib/subscriptionRange";
+import { HEBREW_MONTHS_FULL } from "@/lib/hebrewDates";
 
 interface Subscription {
   id: string;
@@ -11,6 +13,8 @@ interface Subscription {
   dayOfMonth: number;
   category: string;
   isActive: boolean;
+  startMonth: string | null;
+  endMonth: string | null;
 }
 
 interface FormData {
@@ -18,9 +22,37 @@ interface FormData {
   amount: string;
   dayOfMonth: string;
   category: string;
+  hasValidity: boolean;
+  endMode: "date" | "installments";
+  startMonth: string;   // "YYYY-MM"
+  endMonth: string;     // "YYYY-MM", used when endMode === "date"
+  installments: string; // used when endMode === "installments"
 }
 
-const DEFAULT_FORM: FormData = { name: "", amount: "", dayOfMonth: "", category: "מנוי" };
+const DEFAULT_FORM: FormData = {
+  name: "",
+  amount: "",
+  dayOfMonth: "",
+  category: "מנוי",
+  hasValidity: false,
+  endMode: "date",
+  startMonth: new Date().toISOString().slice(0, 7),
+  endMonth: "",
+  installments: "",
+};
+
+function shortMonthLabel(iso: string): string {
+  const d = new Date(iso);
+  return `${HEBREW_MONTHS_FULL[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+function addMonthsToYYYYMM(yyyymm: string, monthsToAdd: number): string {
+  const [y, m] = yyyymm.split("-").map(Number);
+  const totalIdx = y * 12 + (m - 1) + monthsToAdd;
+  const newY = Math.floor(totalIdx / 12);
+  const newM = (totalIdx % 12) + 1;
+  return `${newY}-${String(newM).padStart(2, "0")}`;
+}
 
 function SubscriptionRow({
   sub, onEdit, onDelete, onToggle,
@@ -32,6 +64,8 @@ function SubscriptionRow({
 }) {
   const [confirm, setConfirm] = useState(false);
   const c = CATEGORY_COLORS[sub.category] ?? DEFAULT_CATEGORY_COLOR;
+  const status = getSubValidityStatus(sub, new Date());
+  const isEnded = status.kind === "ended";
 
   return (
     <div
@@ -43,7 +77,7 @@ function SubscriptionRow({
         padding: "12px 16px",
         direction: "rtl",
         gap: 10,
-        opacity: sub.isActive ? 1 : 0.45,
+        opacity: !sub.isActive || isEnded ? 0.45 : 1,
         transition: "background 0.1s, opacity 0.15s",
       }}
       onMouseEnter={(e) => (e.currentTarget.style.background = "#20272f")}
@@ -67,7 +101,10 @@ function SubscriptionRow({
           {sub.name}
         </p>
         <p style={{ fontSize: 11, color: "#6b7785", fontFamily: "Rubik, sans-serif", marginTop: 2 }}>
-          כל ה-{sub.dayOfMonth} לחודש
+          {`כל ה-${sub.dayOfMonth} לחודש`}
+          {status.kind === "active-limited" && ` · תשלום ${status.current}/${status.total}`}
+          {status.kind === "upcoming" && sub.startMonth && ` · מתחיל ב-${shortMonthLabel(sub.startMonth)}`}
+          {status.kind === "ended" && sub.endMonth && ` · הסתיים ב-${shortMonthLabel(sub.endMonth)}`}
         </p>
       </div>
 
@@ -80,23 +117,40 @@ function SubscriptionRow({
       </span>
 
       {/* Toggle */}
-      <button
-        onClick={onToggle}
-        style={{
-          background: sub.isActive ? "rgba(52,224,161,.12)" : "#161b22",
-          border: `1px solid ${sub.isActive ? "#1c3329" : "#20272f"}`,
-          color: sub.isActive ? "#34e0a1" : "#5c6776",
-          borderRadius: 99,
-          padding: "4px 10px",
-          fontSize: 11,
-          fontFamily: "Rubik, sans-serif",
-          cursor: "pointer",
-          flexShrink: 0,
-          transition: "all 0.15s",
-        }}
-      >
-        {sub.isActive ? "פעיל" : "כבוי"}
-      </button>
+      {isEnded ? (
+        <span
+          style={{
+            background: "#161b22",
+            border: "1px solid #20272f",
+            color: "#5c6776",
+            borderRadius: 99,
+            padding: "4px 10px",
+            fontSize: 11,
+            fontFamily: "Rubik, sans-serif",
+            flexShrink: 0,
+          }}
+        >
+          הסתיים
+        </span>
+      ) : (
+        <button
+          onClick={onToggle}
+          style={{
+            background: sub.isActive ? "rgba(52,224,161,.12)" : "#161b22",
+            border: `1px solid ${sub.isActive ? "#1c3329" : "#20272f"}`,
+            color: sub.isActive ? "#34e0a1" : "#5c6776",
+            borderRadius: 99,
+            padding: "4px 10px",
+            fontSize: 11,
+            fontFamily: "Rubik, sans-serif",
+            cursor: "pointer",
+            flexShrink: 0,
+            transition: "all 0.15s",
+          }}
+        >
+          {sub.isActive ? "פעיל" : "כבוי"}
+        </button>
+      )}
 
       {/* Edit */}
       <button
@@ -162,7 +216,18 @@ export default function SubscriptionsPage() {
 
   function openAdd() { setForm(DEFAULT_FORM); setModal({ open: true, editing: null }); }
   function openEdit(sub: Subscription) {
-    setForm({ name: sub.name, amount: String(sub.amount), dayOfMonth: String(sub.dayOfMonth), category: sub.category });
+    const hasValidity = !!(sub.startMonth && sub.endMonth);
+    setForm({
+      name: sub.name,
+      amount: String(sub.amount),
+      dayOfMonth: String(sub.dayOfMonth),
+      category: sub.category,
+      hasValidity,
+      endMode: "date",
+      startMonth: hasValidity && sub.startMonth ? sub.startMonth.slice(0, 7) : new Date().toISOString().slice(0, 7),
+      endMonth: hasValidity && sub.endMonth ? sub.endMonth.slice(0, 7) : "",
+      installments: "",
+    });
     setModal({ open: true, editing: sub });
   }
 
@@ -170,17 +235,32 @@ export default function SubscriptionsPage() {
     e.preventDefault();
     setSaving(true);
     try {
+      let finalAmount = parseFloat(form.amount);
+      let finalStartMonth: string | null = null;
+      let finalEndMonth: string | null = null;
+
+      if (form.hasValidity) {
+        finalStartMonth = `${form.startMonth}-01`;
+        if (form.endMode === "date") {
+          finalEndMonth = `${form.endMonth}-01`;
+        } else {
+          const installments = parseInt(form.installments, 10);
+          finalAmount = Math.round((parseFloat(form.amount) / installments) * 100) / 100;
+          finalEndMonth = `${addMonthsToYYYYMM(form.startMonth, installments - 1)}-01`;
+        }
+      }
+
       if (modal.editing) {
         await fetch(`/api/subscriptions/${modal.editing.id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name: form.name, amount: parseFloat(form.amount), dayOfMonth: parseInt(form.dayOfMonth, 10), category: form.category }),
+          body: JSON.stringify({ name: form.name, amount: finalAmount, dayOfMonth: parseInt(form.dayOfMonth, 10), category: form.category, startMonth: finalStartMonth, endMonth: finalEndMonth }),
         });
       } else {
         await fetch("/api/subscriptions", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name: form.name, amount: parseFloat(form.amount), dayOfMonth: parseInt(form.dayOfMonth, 10), category: form.category }),
+          body: JSON.stringify({ name: form.name, amount: finalAmount, dayOfMonth: parseInt(form.dayOfMonth, 10), category: form.category, startMonth: finalStartMonth, endMonth: finalEndMonth }),
         });
       }
       closeModal(); load();
@@ -363,7 +443,9 @@ export default function SubscriptionsPage() {
 
               {/* Amount */}
               <div style={pillRow}>
-                <span style={{ fontSize: 13, color: "#7c8896", fontFamily: "Rubik, sans-serif" }}>סכום ₪</span>
+                <span style={{ fontSize: 13, color: "#7c8896", fontFamily: "Rubik, sans-serif" }}>
+                  {form.hasValidity && form.endMode === "installments" ? "סכום כולל ₪" : "סכום ₪"}
+                </span>
                 <input
                   type="text"
                   inputMode="decimal"
@@ -398,6 +480,90 @@ export default function SubscriptionsPage() {
                   style={{ background: "transparent", border: "none", outline: "none", color: "#f2f5f8", fontSize: 16, fontFamily: "Rubik, sans-serif", textAlign: "left", flex: 1, direction: "ltr" }}
                 />
               </div>
+
+              {/* Validity toggle */}
+              <label style={{ ...pillRow, cursor: "pointer" }}>
+                <span style={{ fontSize: 13, color: "#7c8896", fontFamily: "Rubik, sans-serif" }}>מנוי עם תוקף</span>
+                <input
+                  type="checkbox"
+                  checked={form.hasValidity}
+                  onChange={(e) => setForm((f) => ({ ...f, hasValidity: e.target.checked }))}
+                  style={{ width: 20, height: 20, accentColor: "#34e0a1" }}
+                />
+              </label>
+
+              {form.hasValidity && (
+                <>
+                  {/* Start month */}
+                  <div style={pillRow}>
+                    <span style={{ fontSize: 13, color: "#7c8896", fontFamily: "Rubik, sans-serif" }}>מתחיל ב</span>
+                    <input
+                      type="month"
+                      value={form.startMonth}
+                      onChange={(e) => setForm((f) => ({ ...f, startMonth: e.target.value }))}
+                      style={{ background: "transparent", border: "none", outline: "none", color: "#f2f5f8", fontSize: 16, fontFamily: "Rubik, sans-serif", flex: 1, direction: "ltr", colorScheme: "dark" }}
+                    />
+                  </div>
+
+                  {/* End mode segmented control */}
+                  <div style={{ display: "flex", gap: 8 }}>
+                    {(["date", "installments"] as const).map((mode) => (
+                      <button
+                        key={mode}
+                        type="button"
+                        onClick={() => setForm((f) => ({ ...f, endMode: mode }))}
+                        style={{
+                          flex: 1,
+                          padding: "10px 0",
+                          borderRadius: 12,
+                          border: `1px solid ${form.endMode === mode ? "#34e0a1" : "#20272f"}`,
+                          background: form.endMode === mode ? "rgba(52,224,161,.12)" : "#11151b",
+                          color: form.endMode === mode ? "#34e0a1" : "#7c8896",
+                          fontSize: 13,
+                          fontFamily: "Rubik, sans-serif",
+                          fontWeight: 600,
+                          cursor: "pointer",
+                        }}
+                      >
+                        {mode === "date" ? "תאריך סיום" : "מספר תשלומים"}
+                      </button>
+                    ))}
+                  </div>
+
+                  {form.endMode === "date" ? (
+                    <div style={pillRow}>
+                      <span style={{ fontSize: 13, color: "#7c8896", fontFamily: "Rubik, sans-serif" }}>מסתיים ב</span>
+                      <input
+                        type="month"
+                        value={form.endMonth}
+                        onChange={(e) => setForm((f) => ({ ...f, endMonth: e.target.value }))}
+                        required={form.hasValidity && form.endMode === "date"}
+                        style={{ background: "transparent", border: "none", outline: "none", color: "#f2f5f8", fontSize: 16, fontFamily: "Rubik, sans-serif", flex: 1, direction: "ltr", colorScheme: "dark" }}
+                      />
+                    </div>
+                  ) : (
+                    <>
+                      <div style={pillRow}>
+                        <span style={{ fontSize: 13, color: "#7c8896", fontFamily: "Rubik, sans-serif" }}>מספר תשלומים</span>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          value={form.installments}
+                          onChange={(e) => setForm((f) => ({ ...f, installments: e.target.value }))}
+                          required={form.hasValidity && form.endMode === "installments"}
+                          placeholder="10"
+                          style={{ background: "transparent", border: "none", outline: "none", color: "#f2f5f8", fontSize: 16, fontFamily: "Rubik, sans-serif", textAlign: "left", flex: 1, direction: "ltr" }}
+                        />
+                      </div>
+                      {parseFloat(form.amount) > 0 && parseInt(form.installments, 10) > 0 && (
+                        <p style={{ fontSize: 12, color: "#6b7785", fontFamily: "Rubik, sans-serif", textAlign: "center", margin: "-4px 0 0" }}>
+                          {`= ₪${(Math.round((parseFloat(form.amount) / parseInt(form.installments, 10)) * 100) / 100).toLocaleString("he-IL")} לחודש`}
+                        </p>
+                      )}
+                    </>
+                  )}
+                </>
+              )}
 
               {/* Save */}
               <button
