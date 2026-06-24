@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { isSubscriptionInRange } from "@/lib/subscriptionRange";
 
 export async function POST() {
   const today = new Date();
@@ -9,9 +10,9 @@ export async function POST() {
   const monthStart = new Date(year, month, 1);
   const monthEnd = new Date(year, month + 1, 1);
 
-  const activeSubscriptions = await prisma.subscription.findMany({
-    where: { isActive: true },
-  });
+  const activeSubscriptions = (
+    await prisma.subscription.findMany({ where: { isActive: true } })
+  ).filter((sub) => isSubscriptionInRange(sub, year, month));
 
   let inserted = 0;
 
