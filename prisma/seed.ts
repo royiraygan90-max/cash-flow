@@ -25,7 +25,7 @@ async function main() {
     { date: d(-2, 18), type: "expense", category: "בילויים", description: "קולנוע + מסעדה",        amount: 320  },
     { date: d(-2, 20), type: "expense", category: "מזון",    description: "סופרמרקט רמי לוי",      amount: 420  },
     { date: d(-2, 22), type: "expense", category: "ביגוד",   description: "קניות בגדים",           amount: 600  },
-    { date: d(-2, 25), type: "expense", category: "חיסכון",  description: "העברה לחיסכון",         amount: 1000 },
+    { date: d(-2, 25), type: "expense", category: "משק בית",  description: "העברה למשק בית",         amount: 1000 },
     { date: d(-2, 28), type: "expense", category: "תחבורה",  description: "דלק",                   amount: 350  },
 
     // ----- 1 month ago -----
@@ -39,7 +39,7 @@ async function main() {
     { date: d(-1, 16), type: "expense", category: "בריאות",  description: "ביקור רופא + תרופות",  amount: 320   },
     { date: d(-1, 18), type: "expense", category: "מזון",    description: "שוק הכרמל",             amount: 310   },
     { date: d(-1, 21), type: "expense", category: "ביגוד",   description: "נעליים",                amount: 450   },
-    { date: d(-1, 24), type: "expense", category: "חיסכון",  description: "העברה לחיסכון",         amount: 1500  },
+    { date: d(-1, 24), type: "expense", category: "משק בית",  description: "העברה למשק בית",         amount: 1500  },
     { date: d(-1, 27), type: "expense", category: "אחר",     description: "מתנה ליום הולדת",       amount: 200   },
 
     // ----- current month -----
@@ -51,7 +51,7 @@ async function main() {
     { date: d(0, 11), type: "expense", category: "בריאות",  description: "פיזיותרפיה",            amount: 280   },
     { date: d(0, 13), type: "expense", category: "בילויים", description: "מופע מוזיקה",           amount: 180   },
     { date: d(0, 15), type: "expense", category: "מזון",    description: "רמי לוי",               amount: 350   },
-    { date: d(0, 17), type: "expense", category: "חיסכון",  description: "העברה לחיסכון",         amount: 1000  },
+    { date: d(0, 17), type: "expense", category: "משק בית",  description: "העברה למשק בית",         amount: 1000  },
     { date: d(0, 19), type: "expense", category: "אחר",     description: "ספרים וקורסים",         amount: 290   },
   ];
 

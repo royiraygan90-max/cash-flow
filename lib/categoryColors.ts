@@ -29,8 +29,8 @@ export const CATEGORY_COLORS: Record<string, CategoryColor> = {
   שכירות:  { bg: "#52b9ff22", color: "#52b9ff", border: "#52b9ff44", icon: "home_work" },
   // Clothing
   ביגוד:   { bg: "#f472b622", color: "#f472b6", border: "#f472b644", icon: "checkroom" },
-  // Savings
-  חיסכון:  { bg: "#34e0a122", color: "#34e0a1", border: "#34e0a144", icon: "savings" },
+  // Household
+  "משק בית": { bg: "#2dd4bf22", color: "#2dd4bf", border: "#2dd4bf44", icon: "weekend" },
   // Subscription
   מנוי:    { bg: "#818cf822", color: "#818cf8", border: "#818cf844", icon: "autorenew" },
   // Fallback
