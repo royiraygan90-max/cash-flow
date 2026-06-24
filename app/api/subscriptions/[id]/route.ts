@@ -6,7 +6,7 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   const body = await req.json();
-  const { name, amount, dayOfMonth, category, isActive } = body;
+  const { name, amount, dayOfMonth, category, isActive, startMonth, endMonth } = body;
 
   if (amount !== undefined && isNaN(parseFloat(amount))) {
     return NextResponse.json({ error: "Invalid amount" }, { status: 400 });
@@ -24,6 +24,8 @@ export async function PUT(
         ...(dayOfMonth !== undefined && { dayOfMonth: parseInt(dayOfMonth, 10) }),
         ...(category !== undefined && { category }),
         ...(isActive !== undefined && { isActive }),
+        ...(startMonth !== undefined && { startMonth: startMonth ? new Date(startMonth) : null }),
+        ...(endMonth !== undefined && { endMonth: endMonth ? new Date(endMonth) : null }),
       },
     });
     return NextResponse.json(updated);

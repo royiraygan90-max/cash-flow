@@ -10,7 +10,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { name, amount, dayOfMonth, category } = body;
+  const { name, amount, dayOfMonth, category, startMonth, endMonth } = body;
 
   if (!name || amount == null || !dayOfMonth) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -22,6 +22,8 @@ export async function POST(req: NextRequest) {
       amount: parseFloat(amount),
       dayOfMonth: parseInt(dayOfMonth, 10),
       category: category ?? "מנוי",
+      startMonth: startMonth ? new Date(startMonth) : null,
+      endMonth: endMonth ? new Date(endMonth) : null,
     },
   });
 
