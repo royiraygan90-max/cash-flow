@@ -110,6 +110,16 @@ export default function MonthNavigator({ month, year }: Props) {
         </button>
 
         <button
+          onClick={() => router.push("/report")}
+          style={utilityPill}
+          onMouseEnter={(e) => (e.currentTarget.style.color = "#f2f5f8")}
+          onMouseLeave={(e) => (e.currentTarget.style.color = "#9aa6b4")}
+        >
+          <Icon name="summarize" size={14} />
+          דוח שנתי
+        </button>
+
+        <button
           onClick={() => window.open("/api/export", "_blank")}
           style={utilityPill}
           onMouseEnter={(e) => (e.currentTarget.style.color = "#f2f5f8")}
