@@ -1,6 +1,7 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { REFERRAL_BONUS_AMOUNT } from "@/lib/salaryCalc";
 
 interface Props {
@@ -31,20 +32,22 @@ const btnStyle: React.CSSProperties = {
   flexShrink: 0,
 };
 
-export default function ReferralBonusInput({ referralCount, month, year }: Props) {
+export default function ReferralBonusInput({ referralCount: initialCount, month, year }: Props) {
+  const [count, setCount] = useState(initialCount);
+  const [saving, setSaving] = useState(false);
   const router = useRouter();
-  const searchParams = useSearchParams();
 
-  function setCount(next: number) {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("month", String(month));
-    params.set("year", String(year));
-    if (next > 0) {
-      params.set("referrals", String(next));
-    } else {
-      params.delete("referrals");
-    }
-    router.push(`/salary?${params.toString()}`);
+  async function updateCount(next: number) {
+    const clamped = Math.max(0, next);
+    setCount(clamped);
+    setSaving(true);
+    await fetch("/api/salary-settings", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ month, year, referralCount: clamped }),
+    });
+    setSaving(false);
+    router.refresh();
   }
 
   return (
@@ -59,23 +62,25 @@ export default function ReferralBonusInput({ referralCount, month, year }: Props
         padding: "3px 0",
       }}
     >
-      <span style={{ color: "#9aa6b4" }}>בונוס חבר מביא חבר</span>
+      <span style={{ color: saving ? "#6b7785" : "#9aa6b4" }}>בונוס חבר מביא חבר</span>
       <div style={{ display: "flex", alignItems: "center", gap: 8, direction: "ltr" }}>
         <button
           style={btnStyle}
-          onClick={() => setCount(Math.max(0, referralCount - 1))}
+          onClick={() => updateCount(count - 1)}
+          disabled={saving || count === 0}
           onMouseEnter={(e) => { e.currentTarget.style.color = "#f2f5f8"; e.currentTarget.style.background = "#20272f"; }}
           onMouseLeave={(e) => { e.currentTarget.style.color = "#9aa6b4"; e.currentTarget.style.background = "#1b2230"; }}
           aria-label="הפחת בונוס"
         >
           −
         </button>
-        <span style={{ color: referralCount > 0 ? "#34e0a1" : "#7c8896", minWidth: 28, textAlign: "center" }}>
-          {referralCount > 0 ? `₪${fmt(referralCount * REFERRAL_BONUS_AMOUNT)}` : "—"}
+        <span style={{ color: count > 0 ? "#34e0a1" : "#7c8896", minWidth: 50, textAlign: "center" }}>
+          {count > 0 ? `₪${fmt(count * REFERRAL_BONUS_AMOUNT)}` : "—"}
         </span>
         <button
           style={btnStyle}
-          onClick={() => setCount(referralCount + 1)}
+          onClick={() => updateCount(count + 1)}
+          disabled={saving}
           onMouseEnter={(e) => { e.currentTarget.style.color = "#f2f5f8"; e.currentTarget.style.background = "#20272f"; }}
           onMouseLeave={(e) => { e.currentTarget.style.color = "#9aa6b4"; e.currentTarget.style.background = "#1b2230"; }}
           aria-label="הוסף בונוס"

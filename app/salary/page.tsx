@@ -9,25 +9,26 @@ import NetCard from "@/app/components/NetCard";
 export const dynamic = "force-dynamic";
 
 interface PageProps {
-  searchParams: { month?: string; year?: string; referrals?: string };
+  searchParams: { month?: string; year?: string };
 }
 
 export default async function SalaryPage({ searchParams }: PageProps) {
-  const now           = new Date();
-  const month         = parseInt(searchParams.month    ?? String(now.getMonth() + 1));
-  const year          = parseInt(searchParams.year     ?? String(now.getFullYear()));
-  const referralCount = parseInt(searchParams.referrals ?? "0") || 0;
+  const now   = new Date();
+  const month = parseInt(searchParams.month ?? String(now.getMonth() + 1));
+  const year  = parseInt(searchParams.year  ?? String(now.getFullYear()));
 
   const start = new Date(year, month - 1, 1);
   const end   = new Date(year, month, 1);
 
-  const shifts = await prisma.shift.findMany({
-    where: { date: { gte: start, lt: end } },
-  });
+  const [shifts, salarySettings] = await Promise.all([
+    prisma.shift.findMany({ where: { date: { gte: start, lt: end } } }),
+    prisma.salarySettings.findUnique({ where: { month_year: { month, year } } }),
+  ]);
 
-  const regularHours = shifts.reduce((sum, s) => sum + s.regularHours, 0);
-  const shabbatHours = shifts.reduce((sum, s) => sum + s.shabbatHours, 0);
-  const breakdown    = computeSalary(regularHours, shabbatHours, referralCount);
+  const referralCount = salarySettings?.referralCount ?? 0;
+  const regularHours  = shifts.reduce((sum, s) => sum + s.regularHours, 0);
+  const shabbatHours  = shifts.reduce((sum, s) => sum + s.shabbatHours, 0);
+  const breakdown     = computeSalary(regularHours, shabbatHours, referralCount);
   const noShifts     = regularHours + shabbatHours === 0;
 
   return (

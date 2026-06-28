@@ -3,3 +3,6 @@ nixPkgs = ["nodejs_22", "npm-10_x"]
 
 [phases.install]
 cmds = ["npm ci --ignore-engines"]
+
+[phases.build]
+cmds = ["npx prisma generate", "npx prisma migrate deploy", "npm run build"]

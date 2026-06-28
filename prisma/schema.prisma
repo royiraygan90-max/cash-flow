@@ -39,3 +39,12 @@ model Shift {
   shabbatHours Float
   createdAt    DateTime @default(now())
 }
+
+model SalarySettings {
+  id            String @id @default(cuid())
+  month         Int
+  year          Int
+  referralCount Int    @default(0)
+
+  @@unique([month, year])
+}
