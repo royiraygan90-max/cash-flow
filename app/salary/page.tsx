@@ -9,13 +9,14 @@ import NetCard from "@/app/components/NetCard";
 export const dynamic = "force-dynamic";
 
 interface PageProps {
-  searchParams: { month?: string; year?: string };
+  searchParams: { month?: string; year?: string; referrals?: string };
 }
 
 export default async function SalaryPage({ searchParams }: PageProps) {
-  const now   = new Date();
-  const month = parseInt(searchParams.month ?? String(now.getMonth() + 1));
-  const year  = parseInt(searchParams.year  ?? String(now.getFullYear()));
+  const now           = new Date();
+  const month         = parseInt(searchParams.month    ?? String(now.getMonth() + 1));
+  const year          = parseInt(searchParams.year     ?? String(now.getFullYear()));
+  const referralCount = parseInt(searchParams.referrals ?? "0") || 0;
 
   const start = new Date(year, month - 1, 1);
   const end   = new Date(year, month, 1);
@@ -26,7 +27,7 @@ export default async function SalaryPage({ searchParams }: PageProps) {
 
   const regularHours = shifts.reduce((sum, s) => sum + s.regularHours, 0);
   const shabbatHours = shifts.reduce((sum, s) => sum + s.shabbatHours, 0);
-  const breakdown    = computeSalary(regularHours, shabbatHours);
+  const breakdown    = computeSalary(regularHours, shabbatHours, referralCount);
   const noShifts     = regularHours + shabbatHours === 0;
 
   return (
@@ -55,7 +56,7 @@ export default async function SalaryPage({ searchParams }: PageProps) {
           לא הוזנו משמרות החודש — השכר מבוסס רק על בונוס ונסיעות.
         </p>
       )}
-      <GrossCard breakdown={breakdown} shabbatHours={shabbatHours} />
+      <GrossCard breakdown={breakdown} shabbatHours={shabbatHours} referralCount={referralCount} month={month} year={year} />
       <DeductionsList breakdown={breakdown} />
       <NetCard net={breakdown.net} />
     </main>

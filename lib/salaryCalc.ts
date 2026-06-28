@@ -51,11 +51,14 @@ export function calcBituachLeumiHealth(taxableMonthly: number): number {
   );
 }
 
+export const REFERRAL_BONUS_AMOUNT = 1000;
+
 export interface SalaryBreakdown {
   regularPay: number;
   shabbatPay: number;
   basePay: number;
   bonus: number;
+  referralBonus: number;
   travel: number;
   gross: number;
   incomeTax: number;
@@ -66,16 +69,17 @@ export interface SalaryBreakdown {
   net: number;
 }
 
-export function computeSalary(regularHours: number, shabbatHours: number): SalaryBreakdown {
-  const regularPay = regularHours * REGULAR_RATE;
-  const shabbatPay = shabbatHours * SHABBAT_RATE;
-  const basePay    = regularPay + shabbatPay;
-  const bonus      = MONTHLY_BONUS;
-  const travel     = TRAVEL_ALLOWANCE;
+export function computeSalary(regularHours: number, shabbatHours: number, referralCount = 0): SalaryBreakdown {
+  const regularPay   = regularHours * REGULAR_RATE;
+  const shabbatPay   = shabbatHours * SHABBAT_RATE;
+  const basePay      = regularPay + shabbatPay;
+  const bonus        = MONTHLY_BONUS;
+  const referralBonus = referralCount * REFERRAL_BONUS_AMOUNT;
+  const travel       = TRAVEL_ALLOWANCE;
 
   // fiscalBase excludes travel — travel is exempt from income tax, Bituach Leumi,
   // pension, and study-fund base per standard Israeli payroll practice.
-  const fiscalBase = basePay + bonus;
+  const fiscalBase = basePay + bonus + referralBonus;
   const gross      = fiscalBase + travel;
 
   const incomeTax           = calcIncomeTax(fiscalBase);
@@ -90,6 +94,7 @@ export function computeSalary(regularHours: number, shabbatHours: number): Salar
     shabbatPay,
     basePay,
     bonus,
+    referralBonus,
     travel,
     gross,
     incomeTax,

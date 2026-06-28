@@ -1,8 +1,12 @@
 import { SalaryBreakdown } from "@/lib/salaryCalc";
+import ReferralBonusInput from "./ReferralBonusInput";
 
 interface Props {
   breakdown: SalaryBreakdown;
   shabbatHours: number;
+  referralCount: number;
+  month: number;
+  year: number;
 }
 
 function fmt(n: number): string {
@@ -19,8 +23,8 @@ const rowStyle: React.CSSProperties = {
   padding: "3px 0",
 };
 
-export default function GrossCard({ breakdown, shabbatHours }: Props) {
-  const { regularPay, shabbatPay, basePay, bonus, travel, gross } = breakdown;
+export default function GrossCard({ breakdown, shabbatHours, referralCount, month, year }: Props) {
+  const { regularPay, shabbatPay, bonus, travel, gross } = breakdown;
 
   return (
     <div
@@ -67,6 +71,8 @@ export default function GrossCard({ breakdown, shabbatHours }: Props) {
           <span style={{ color: "#9aa6b4" }}>בונוס קבוע</span>
           <span style={{ color: "#f2f5f8", direction: "ltr" }}>₪{fmt(bonus)}</span>
         </div>
+
+        <ReferralBonusInput referralCount={referralCount} month={month} year={year} />
 
         <div style={rowStyle}>
           <span style={{ color: "#9aa6b4" }}>נסיעות</span>
