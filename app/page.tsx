@@ -42,10 +42,14 @@ export default async function DashboardPage({ searchParams }: PageProps) {
   const totalIncome   = totalIncomeRaw - freelanceExpense;
   const totalExpenses = totalExpensesRaw - freelanceExpense;
 
-  const monthShifts       = await prisma.shift.findMany({ where: { date: { gte: start, lt: end } } });
+  const [monthShifts, salarySettings] = await Promise.all([
+    prisma.shift.findMany({ where: { date: { gte: start, lt: end } } }),
+    prisma.salarySettings.findUnique({ where: { month_year: { month, year } } }),
+  ]);
   const regularHours      = monthShifts.reduce((s, sh) => s + sh.regularHours, 0);
   const shabbatHours      = monthShifts.reduce((s, sh) => s + sh.shabbatHours, 0);
-  const salary            = computeSalary(regularHours, shabbatHours);
+  const referralCount     = salarySettings?.referralCount ?? 0;
+  const salary            = computeSalary(regularHours, shabbatHours, referralCount);
   const salaryTransactions = currentTransactions.filter((t) => t.type === "income" && t.category === "משכורת");
   const salaryPaidAmount   = salaryTransactions.reduce((s, t) => s + t.amount, 0);
   const salaryPaid         = salaryTransactions.length > 0;
