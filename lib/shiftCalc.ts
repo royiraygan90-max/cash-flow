@@ -11,13 +11,13 @@ export function splitShiftHours(
   let shiftEnd = new Date(date.getFullYear(), date.getMonth(), date.getDate(), eh, em);
   if (shiftEnd <= shiftStart) shiftEnd = new Date(shiftEnd.getTime() + 24 * 60 * 60 * 1000);
 
-  // Most-recent Friday 19:00 is always the start of the relevant Shabbat window.
-  // The window runs exactly 33 h: Fri 19:00 → Sun 04:00.
+  // Most-recent Friday 16:00 is always the start of the relevant Shabbat window.
+  // The window runs exactly 36 h: Fri 16:00 → Sun 04:00.
   const daysSinceFriday = (shiftStart.getDay() - 5 + 7) % 7;
   const windowStart = new Date(shiftStart);
   windowStart.setDate(windowStart.getDate() - daysSinceFriday);
-  windowStart.setHours(19, 0, 0, 0);
-  const windowEnd = new Date(windowStart.getTime() + 33 * 60 * 60 * 1000);
+  windowStart.setHours(16, 0, 0, 0);
+  const windowEnd = new Date(windowStart.getTime() + 36 * 60 * 60 * 1000);
 
   const overlapStart = Math.max(shiftStart.getTime(), windowStart.getTime());
   const overlapEnd   = Math.min(shiftEnd.getTime(),   windowEnd.getTime());
