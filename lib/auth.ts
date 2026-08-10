@@ -1,10 +1,23 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import type { User } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
 export const SESSION_COOKIE = "cf_session";
+
+/**
+ * Route Handlers' `req.url` reflects the internal address Next.js's server
+ * sees, not the public host — behind Railway's reverse proxy that's the
+ * container's own port, so `new URL(path, req.url)` redirects to
+ * localhost instead of the real domain. Prefer the standard forwarded
+ * headers the proxy sets for the original public request.
+ */
+export function getRequestOrigin(req: NextRequest): string {
+  const proto = req.headers.get("x-forwarded-proto") ?? req.nextUrl.protocol.replace(":", "");
+  const host = req.headers.get("x-forwarded-host") ?? req.headers.get("host") ?? req.nextUrl.host;
+  return `${proto}://${host}`;
+}
 
 export async function getCurrentUser(): Promise<User | null> {
   const token = cookies().get(SESSION_COOKIE)?.value;
