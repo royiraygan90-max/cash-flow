@@ -18,8 +18,15 @@ interface Shift {
   createdAt: string;
 }
 
+interface RateProfile {
+  regularRate: number;
+  shabbatRate: number;
+  overtimeEnabled: boolean;
+}
+
 interface Props {
   shifts: Shift[];
+  profile: RateProfile;
 }
 
 function fmtDate(dateStr: string): string {
@@ -32,7 +39,7 @@ function getDayName(dateStr: string): string {
   return HEBREW_DAYS[d.getDay()];
 }
 
-function ShiftRow({ shift }: { shift: Shift }) {
+function ShiftRow({ shift, profile }: { shift: Shift; profile: RateProfile }) {
   const router = useRouter();
   const [confirm, setConfirm] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -51,7 +58,7 @@ function ShiftRow({ shift }: { shift: Shift }) {
 
   return (
     <>
-      {editing && <AddShiftModal editShift={shift} onClose={() => setEditing(false)} />}
+      {editing && <AddShiftModal editShift={shift} profile={profile} onClose={() => setEditing(false)} />}
       <div
         className="group"
         style={{
@@ -181,7 +188,7 @@ function ShiftRow({ shift }: { shift: Shift }) {
   );
 }
 
-export default function ShiftList({ shifts }: Props) {
+export default function ShiftList({ shifts, profile }: Props) {
   if (shifts.length === 0) {
     return (
       <div
@@ -211,7 +218,7 @@ export default function ShiftList({ shifts }: Props) {
       }}
     >
       {shifts.map((shift) => (
-        <ShiftRow key={shift.id} shift={shift} />
+        <ShiftRow key={shift.id} shift={shift} profile={profile} />
       ))}
     </div>
   );

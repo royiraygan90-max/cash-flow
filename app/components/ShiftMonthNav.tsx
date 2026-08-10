@@ -10,9 +10,16 @@ const HEBREW_MONTHS = [
   "יולי", "אוגוסט", "ספטמבר", "אוקטובר", "נובמבר", "דצמבר",
 ];
 
+interface RateProfile {
+  regularRate: number;
+  shabbatRate: number;
+  overtimeEnabled: boolean;
+}
+
 interface Props {
   month: number;
   year: number;
+  profile: RateProfile;
 }
 
 const navBtn: React.CSSProperties = {
@@ -29,7 +36,7 @@ const navBtn: React.CSSProperties = {
   transition: "color 0.15s, background 0.15s",
 };
 
-export default function ShiftMonthNav({ month, year }: Props) {
+export default function ShiftMonthNav({ month, year, profile }: Props) {
   const router = useRouter();
   const [modalOpen, setModalOpen] = useState(false);
 
@@ -40,7 +47,7 @@ export default function ShiftMonthNav({ month, year }: Props) {
 
   return (
     <>
-      {modalOpen && <AddShiftModal onClose={() => setModalOpen(false)} />}
+      {modalOpen && <AddShiftModal profile={profile} onClose={() => setModalOpen(false)} />}
 
       <div
         style={{

@@ -1,7 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Icon from "./Icon";
+import SalarySettingsModal, { type SalaryProfileValues } from "./SalarySettingsModal";
 
 const HEBREW_MONTHS = [
   "ינואר", "פברואר", "מרץ", "אפריל", "מאי", "יוני",
@@ -11,6 +13,7 @@ const HEBREW_MONTHS = [
 interface Props {
   month: number;
   year: number;
+  profile: SalaryProfileValues;
 }
 
 const navBtn: React.CSSProperties = {
@@ -27,8 +30,9 @@ const navBtn: React.CSSProperties = {
   transition: "color 0.15s, background 0.15s",
 };
 
-export default function SalaryMonthNav({ month, year }: Props) {
+export default function SalaryMonthNav({ month, year, profile }: Props) {
   const router = useRouter();
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   function navigate(offset: number) {
     const d = new Date(year, month - 1 + offset, 1);
@@ -47,6 +51,8 @@ export default function SalaryMonthNav({ month, year }: Props) {
         direction: "rtl",
       }}
     >
+      {settingsOpen && <SalarySettingsModal profile={profile} onClose={() => setSettingsOpen(false)} />}
+
       {/* Month label + prev/next */}
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
         <button
@@ -74,22 +80,35 @@ export default function SalaryMonthNav({ month, year }: Props) {
         </button>
       </div>
 
-      {/* Link to shifts page */}
-      <a
-        href={`/shifts?month=${month}&year=${year}`}
-        style={{
-          fontSize: 12,
-          color: "#7c8896",
-          fontFamily: "Rubik, sans-serif",
-          textDecoration: "none",
-          cursor: "pointer",
-          transition: "color 0.15s",
-        }}
-        onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.textDecoration = "underline"; (e.currentTarget as HTMLAnchorElement).style.color = "#9aa6b4"; }}
-        onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.textDecoration = "none"; (e.currentTarget as HTMLAnchorElement).style.color = "#7c8896"; }}
-      >
-        שעות עבודה ←
-      </a>
+      <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+        {/* Link to shifts page */}
+        <a
+          href={`/shifts?month=${month}&year=${year}`}
+          style={{
+            fontSize: 12,
+            color: "#7c8896",
+            fontFamily: "Rubik, sans-serif",
+            textDecoration: "none",
+            cursor: "pointer",
+            transition: "color 0.15s",
+          }}
+          onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.textDecoration = "underline"; (e.currentTarget as HTMLAnchorElement).style.color = "#9aa6b4"; }}
+          onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.textDecoration = "none"; (e.currentTarget as HTMLAnchorElement).style.color = "#7c8896"; }}
+        >
+          שעות עבודה ←
+        </a>
+
+        {/* Salary settings */}
+        <button
+          onClick={() => setSettingsOpen(true)}
+          aria-label="הגדרות שכר"
+          style={navBtn}
+          onMouseEnter={(e) => { e.currentTarget.style.color = "#f2f5f8"; e.currentTarget.style.background = "#20272f"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.color = "#7c8896"; e.currentTarget.style.background = "#1b2230"; }}
+        >
+          <Icon name="settings" size={16} />
+        </button>
+      </div>
     </div>
   );
 }
