@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { requirePageUser } from "@/lib/auth";
 import { computeSalary } from "@/lib/salaryCalc";
 import SalaryMonthNav from "@/app/components/SalaryMonthNav";
 import ShiftSummary from "@/app/components/ShiftSummary";
@@ -13,6 +14,7 @@ interface PageProps {
 }
 
 export default async function SalaryPage({ searchParams }: PageProps) {
+  const user  = await requirePageUser();
   const now   = new Date();
   const month = parseInt(searchParams.month ?? String(now.getMonth() + 1));
   const year  = parseInt(searchParams.year  ?? String(now.getFullYear()));
@@ -21,8 +23,8 @@ export default async function SalaryPage({ searchParams }: PageProps) {
   const end   = new Date(year, month, 1);
 
   const [shifts, salarySettings] = await Promise.all([
-    prisma.shift.findMany({ where: { date: { gte: start, lt: end } } }),
-    prisma.salarySettings.findUnique({ where: { month_year: { month, year } } }),
+    prisma.shift.findMany({ where: { userId: user.id, date: { gte: start, lt: end } } }),
+    prisma.salarySettings.findUnique({ where: { userId_month_year: { userId: user.id, month, year } } }),
   ]);
 
   const referralCount = salarySettings?.referralCount ?? 0;

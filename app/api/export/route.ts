@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireApiUser } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -9,9 +10,13 @@ function cell(value: string | number | boolean): string {
 }
 
 export async function GET() {
+  const auth = await requireApiUser();
+  if ("error" in auth) return auth.error;
+  const { user } = auth;
+
   const [transactions, subscriptions] = await Promise.all([
-    prisma.transaction.findMany({ orderBy: { date: "desc" } }),
-    prisma.subscription.findMany({ orderBy: { dayOfMonth: "asc" } }),
+    prisma.transaction.findMany({ where: { userId: user.id }, orderBy: { date: "desc" } }),
+    prisma.subscription.findMany({ where: { userId: user.id }, orderBy: { dayOfMonth: "asc" } }),
   ]);
 
   const rows: string[] = [];

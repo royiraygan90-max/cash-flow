@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { requirePageUser } from "@/lib/auth";
 import ShiftMonthNav from "@/app/components/ShiftMonthNav";
 import ShiftSummary from "@/app/components/ShiftSummary";
 import ShiftList from "@/app/components/ShiftList";
@@ -10,6 +11,7 @@ interface PageProps {
 }
 
 export default async function ShiftsPage({ searchParams }: PageProps) {
+  const user  = await requirePageUser();
   const now   = new Date();
   const month = parseInt(searchParams.month ?? String(now.getMonth() + 1));
   const year  = parseInt(searchParams.year  ?? String(now.getFullYear()));
@@ -18,7 +20,7 @@ export default async function ShiftsPage({ searchParams }: PageProps) {
   const end   = new Date(year, month, 1);
 
   const shifts = await prisma.shift.findMany({
-    where: { date: { gte: start, lt: end } },
+    where: { userId: user.id, date: { gte: start, lt: end } },
     orderBy: { date: "asc" },
   });
 

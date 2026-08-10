@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireApiUser } from "@/lib/auth";
 import { splitShiftHours } from "@/lib/shiftCalc";
 
 export async function GET(req: NextRequest) {
+  const auth = await requireApiUser();
+  if ("error" in auth) return auth.error;
+  const { user } = auth;
+
   const { searchParams } = new URL(req.url);
   const month = parseInt(searchParams.get("month") ?? String(new Date().getMonth() + 1));
   const year  = parseInt(searchParams.get("year")  ?? String(new Date().getFullYear()));
@@ -11,7 +16,7 @@ export async function GET(req: NextRequest) {
   const end   = new Date(year, month, 1);
 
   const shifts = await prisma.shift.findMany({
-    where: { date: { gte: start, lt: end } },
+    where: { userId: user.id, date: { gte: start, lt: end } },
     orderBy: { date: "asc" },
   });
 
@@ -19,6 +24,10 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const auth = await requireApiUser();
+  if ("error" in auth) return auth.error;
+  const { user } = auth;
+
   const body = await req.json();
   const { date, startTime, endTime } = body;
 
@@ -37,6 +46,7 @@ export async function POST(req: NextRequest) {
       hours:        split.totalHours,
       regularHours: split.regularHours,
       shabbatHours: split.shabbatHours,
+      userId: user.id,
     },
   });
 

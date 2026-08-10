@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireApiUser } from "@/lib/auth";
 
 export async function GET(req: NextRequest) {
+  const auth = await requireApiUser();
+  if ("error" in auth) return auth.error;
+  const { user } = auth;
+
   const { searchParams } = new URL(req.url);
   const month = parseInt(searchParams.get("month") ?? String(new Date().getMonth() + 1));
   const year = parseInt(searchParams.get("year") ?? String(new Date().getFullYear()));
@@ -10,7 +15,7 @@ export async function GET(req: NextRequest) {
   const end = new Date(year, month, 1);
 
   const transactions = await prisma.transaction.findMany({
-    where: { date: { gte: start, lt: end } },
+    where: { userId: user.id, date: { gte: start, lt: end } },
     orderBy: { date: "desc" },
   });
 
@@ -18,6 +23,10 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const auth = await requireApiUser();
+  if ("error" in auth) return auth.error;
+  const { user } = auth;
+
   const body = await req.json();
   const { date, type, category, description, amount } = body;
 
@@ -32,6 +41,7 @@ export async function POST(req: NextRequest) {
       category,
       description: description ?? "",
       amount: parseFloat(amount),
+      userId: user.id,
     },
   });
 

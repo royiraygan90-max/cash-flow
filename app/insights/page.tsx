@@ -1,11 +1,13 @@
 import { computeInsights } from "@/lib/insights";
+import { requirePageUser } from "@/lib/auth";
 import InsightCard from "@/app/components/InsightCard";
 import Icon from "@/app/components/Icon";
 
 export const dynamic = "force-dynamic";
 
 export default async function InsightsPage() {
-  const insights = await computeInsights();
+  const user = await requirePageUser();
+  const insights = await computeInsights(user.id);
 
   return (
     <main

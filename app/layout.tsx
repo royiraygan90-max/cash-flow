@@ -4,6 +4,7 @@ import "./globals.css";
 import AppNav from "@/app/components/AppNav";
 import SubscriptionsAutoApply from "@/app/components/SubscriptionsAutoApply";
 import ToastProvider from "@/app/components/Toast";
+import { getCurrentUser } from "@/lib/auth";
 
 const rubik = Rubik({
   subsets: ["latin", "hebrew"],
@@ -23,7 +24,9 @@ export const metadata: Metadata = {
   description: "מעקב תזרים מזומנים אישי",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const user = await getCurrentUser();
+
   return (
     <html lang="he" dir="rtl">
       <head>
@@ -36,8 +39,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className={rubik.variable} style={{ fontFamily: "Rubik, sans-serif" }}>
         <ToastProvider>
-          <AppNav />
-          <SubscriptionsAutoApply />
+          {user && <AppNav />}
+          {user && <SubscriptionsAutoApply />}
           {children}
         </ToastProvider>
       </body>

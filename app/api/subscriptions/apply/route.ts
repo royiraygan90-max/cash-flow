@@ -1,8 +1,13 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireApiUser } from "@/lib/auth";
 import { isSubscriptionInRange } from "@/lib/subscriptionRange";
 
 export async function POST() {
+  const auth = await requireApiUser();
+  if ("error" in auth) return auth.error;
+  const { user } = auth;
+
   const today = new Date();
   const year = today.getFullYear();
   const month = today.getMonth(); // 0-indexed
@@ -11,7 +16,7 @@ export async function POST() {
   const monthEnd = new Date(year, month + 1, 1);
 
   const activeSubscriptions = (
-    await prisma.subscription.findMany({ where: { isActive: true } })
+    await prisma.subscription.findMany({ where: { userId: user.id, isActive: true } })
   ).filter((sub) => isSubscriptionInRange(sub, year, month));
 
   let inserted = 0;
@@ -20,6 +25,7 @@ export async function POST() {
     try {
       const existing = await prisma.transaction.findFirst({
         where: {
+          userId: user.id,
           description: sub.name,
           amount: sub.amount,
           date: { gte: monthStart, lt: monthEnd },
@@ -34,6 +40,7 @@ export async function POST() {
             amount: sub.amount,
             category: sub.category,
             date: new Date(year, month, sub.dayOfMonth),
+            userId: user.id,
           },
         });
         inserted++;
