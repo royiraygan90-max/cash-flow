@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { requirePageUser } from "@/lib/auth";
 import { formatMonthLabel, monthKey } from "@/lib/hebrewDates";
 import RangeSelect from "@/app/components/RangeSelect";
 import StatsViewToggle from "@/app/components/StatsViewToggle";
@@ -24,6 +25,7 @@ const pageStyle = {
 };
 
 export default async function StatisticsPage({ searchParams }: PageProps) {
+  const user = await requirePageUser();
   const view = searchParams.view === "compare" ? "compare" : "stats";
   const rawRange = parseInt(searchParams.range ?? "6");
   const range = [3, 6, 12].includes(rawRange) ? rawRange : 6;
@@ -63,7 +65,7 @@ export default async function StatisticsPage({ searchParams }: PageProps) {
 
   // ── COMPARE VIEW ──────────────────────────────────────────────────────────
   if (view === "compare") {
-    const allTxs = await prisma.transaction.findMany({ orderBy: { date: "asc" } });
+    const allTxs = await prisma.transaction.findMany({ where: { userId: user.id }, orderBy: { date: "asc" } });
 
     const monthSet = new Set<string>();
     for (const tx of allTxs) {
@@ -112,10 +114,10 @@ export default async function StatisticsPage({ searchParams }: PageProps) {
 
     const [txsA, txsB] = await Promise.all([
       prisma.transaction.findMany({
-        where: { date: { gte: new Date(yearA, mA - 1, 1), lt: new Date(yearA, mA, 1) } },
+        where: { userId: user.id, date: { gte: new Date(yearA, mA - 1, 1), lt: new Date(yearA, mA, 1) } },
       }),
       prisma.transaction.findMany({
-        where: { date: { gte: new Date(yearB, mB - 1, 1), lt: new Date(yearB, mB, 1) } },
+        where: { userId: user.id, date: { gte: new Date(yearB, mB - 1, 1), lt: new Date(yearB, mB, 1) } },
       }),
     ]);
 
@@ -166,7 +168,7 @@ export default async function StatisticsPage({ searchParams }: PageProps) {
     months.map(async ({ year, month }) => {
       const start = new Date(year, month - 1, 1);
       const end   = new Date(year, month, 1);
-      const txs   = await prisma.transaction.findMany({ where: { date: { gte: start, lt: end } } });
+      const txs   = await prisma.transaction.findMany({ where: { userId: user.id, date: { gte: start, lt: end } } });
       const income  = txs.filter((t) => t.type === "income").reduce((s, t) => s + t.amount, 0);
       const expense = txs.filter((t) => t.type === "expense").reduce((s, t) => s + t.amount, 0);
       return { year, month, income, expense, count: txs.length, txs };

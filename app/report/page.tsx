@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { requirePageUser } from "@/lib/auth";
 import { HEBREW_MONTHS_FULL } from "@/lib/hebrewDates";
 import YearNavigator from "@/app/components/YearNavigator";
 import YearlyBalanceChart from "@/app/components/YearlyBalanceChart";
@@ -15,6 +16,7 @@ interface PageProps {
 }
 
 export default async function ReportPage({ searchParams }: PageProps) {
+  const user = await requirePageUser();
   const now = new Date();
   const currentYear = now.getFullYear();
   const year = parseInt(searchParams.year ?? String(currentYear), 10) || currentYear;
@@ -23,7 +25,7 @@ export default async function ReportPage({ searchParams }: PageProps) {
   const yearEnd = new Date(year + 1, 0, 1);
 
   const yearTxs = await prisma.transaction.findMany({
-    where: { date: { gte: yearStart, lt: yearEnd } },
+    where: { userId: user.id, date: { gte: yearStart, lt: yearEnd } },
     orderBy: { date: "asc" },
   });
 
@@ -75,7 +77,7 @@ export default async function ReportPage({ searchParams }: PageProps) {
 
   const prevYearStart = new Date(year - 1, 0, 1);
   const prevYearEnd = new Date(year, 0, 1);
-  const prevYearTxs = await prisma.transaction.findMany({ where: { date: { gte: prevYearStart, lt: prevYearEnd } } });
+  const prevYearTxs = await prisma.transaction.findMany({ where: { userId: user.id, date: { gte: prevYearStart, lt: prevYearEnd } } });
   const hasPrevYearData = prevYearTxs.length > 0;
   const prevIncomeRaw = prevYearTxs.filter((t) => t.type === "income").reduce((s, t) => s + t.amount, 0);
   const prevExpensesRaw = prevYearTxs.filter((t) => t.type === "expense").reduce((s, t) => s + t.amount, 0);

@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { requirePageUser } from "@/lib/auth";
 import { computeSalary } from "@/lib/salaryCalc";
 import MonthNavigator from "@/app/components/MonthNavigator";
 import BalanceHeroCard from "@/app/components/BalanceHeroCard";
@@ -22,6 +23,7 @@ interface PageProps {
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage({ searchParams }: PageProps) {
+  const user = await requirePageUser();
   const now   = new Date();
   const month = parseInt(searchParams.month ?? String(now.getMonth() + 1));
   const year  = parseInt(searchParams.year  ?? String(now.getFullYear()));
@@ -30,7 +32,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
   const end   = new Date(year, month,     1);
 
   const currentTransactions = await prisma.transaction.findMany({
-    where: { date: { gte: start, lt: end } },
+    where: { userId: user.id, date: { gte: start, lt: end } },
     orderBy: { date: "desc" },
   });
 
@@ -43,8 +45,8 @@ export default async function DashboardPage({ searchParams }: PageProps) {
   const totalExpenses = totalExpensesRaw - freelanceExpense;
 
   const [monthShifts, salarySettings] = await Promise.all([
-    prisma.shift.findMany({ where: { date: { gte: start, lt: end } } }),
-    prisma.salarySettings.findUnique({ where: { month_year: { month, year } } }),
+    prisma.shift.findMany({ where: { userId: user.id, date: { gte: start, lt: end } } }),
+    prisma.salarySettings.findUnique({ where: { userId_month_year: { userId: user.id, month, year } } }),
   ]);
   const regularHours      = monthShifts.reduce((s, sh) => s + sh.regularHours, 0);
   const shabbatHours      = monthShifts.reduce((s, sh) => s + sh.shabbatHours, 0);
@@ -59,7 +61,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
       const d = new Date(year, month - 1 - 5 + i, 1);
       const s = new Date(d.getFullYear(), d.getMonth(), 1);
       const e = new Date(d.getFullYear(), d.getMonth() + 1, 1);
-      return prisma.transaction.findMany({ where: { date: { gte: s, lt: e } } }).then((txs) => {
+      return prisma.transaction.findMany({ where: { userId: user.id, date: { gte: s, lt: e } } }).then((txs) => {
         const monthFreelanceExpense = txs.filter((t) => t.type === "expense" && t.category === "פרילנס").reduce((sum, t) => sum + t.amount, 0);
         const monthIncomeRaw   = txs.filter((t) => t.type === "income").reduce((sum, t) => sum + t.amount, 0);
         const monthExpensesRaw = txs.filter((t) => t.type === "expense").reduce((sum, t) => sum + t.amount, 0);

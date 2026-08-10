@@ -11,7 +11,7 @@ export type Insight = {
   text: string;
 };
 
-export async function computeInsights(): Promise<Insight[]> {
+export async function computeInsights(userId: string): Promise<Insight[]> {
   const insights: Insight[] = [];
 
   const now = new Date();
@@ -25,7 +25,7 @@ export async function computeInsights(): Promise<Insight[]> {
 
   // ── a) PACE PROJECTION ────────────────────────────────────────────────────
   const currentTxs = await prisma.transaction.findMany({
-    where: { date: { gte: firstOfMonth, lt: firstOfNextMonth } },
+    where: { userId, date: { gte: firstOfMonth, lt: firstOfNextMonth } },
   });
 
   if (currentTxs.length > 0) {
@@ -60,7 +60,7 @@ export async function computeInsights(): Promise<Insight[]> {
 
   // ── Shared prior-month data for b) and e) ─────────────────────────────────
   const priorTxs = await prisma.transaction.findMany({
-    where: { date: { lt: firstOfMonth } },
+    where: { userId, date: { lt: firstOfMonth } },
   });
 
   // Group prior expenses by "year-monthIndex" key, then by category
@@ -119,7 +119,7 @@ export async function computeInsights(): Promise<Insight[]> {
 
   // ── c) UPCOMING SUBSCRIPTION CHARGES ─────────────────────────────────────
   const activeSubs = await prisma.subscription.findMany({
-    where: { isActive: true },
+    where: { userId, isActive: true },
   });
 
   const todayMidnight = new Date(year, now.getMonth(), now.getDate());

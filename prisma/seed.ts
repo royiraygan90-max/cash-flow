@@ -3,7 +3,13 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 async function main() {
-  await prisma.transaction.deleteMany();
+  const user = await prisma.user.upsert({
+    where: { token: "dev" },
+    create: { name: "Dev", token: "dev" },
+    update: {},
+  });
+
+  await prisma.transaction.deleteMany({ where: { userId: user.id } });
 
   const now = new Date();
   const currentYear = now.getFullYear();
@@ -56,10 +62,10 @@ async function main() {
   ];
 
   for (const t of transactions) {
-    await prisma.transaction.create({ data: t });
+    await prisma.transaction.create({ data: { ...t, userId: user.id } });
   }
 
-  console.log(`Seeded ${transactions.length} transactions`);
+  console.log(`Seeded ${transactions.length} transactions. Visit /enter/dev locally to log in as this user.`);
 }
 
 main()

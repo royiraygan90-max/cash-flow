@@ -7,6 +7,18 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  token     String   @unique
+  createdAt DateTime @default(now())
+
+  transactions   Transaction[]
+  subscriptions  Subscription[]
+  shifts         Shift[]
+  salarySettings SalarySettings[]
+}
+
 model Transaction {
   id          String   @id @default(cuid())
   date        DateTime
@@ -15,6 +27,11 @@ model Transaction {
   description String
   amount      Float
   createdAt   DateTime @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model Subscription {
@@ -27,6 +44,11 @@ model Subscription {
   startMonth DateTime?
   endMonth   DateTime?
   createdAt  DateTime  @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model Shift {
@@ -38,6 +60,11 @@ model Shift {
   regularHours Float
   shabbatHours Float
   createdAt    DateTime @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model SalarySettings {
@@ -46,5 +73,8 @@ model SalarySettings {
   year          Int
   referralCount Int    @default(0)
 
-  @@unique([month, year])
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, month, year])
 }
