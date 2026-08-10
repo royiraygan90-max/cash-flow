@@ -2,7 +2,13 @@
 
 import { useState, useEffect, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { splitShiftHours, calcShiftPay, formatHoursAsClock } from "@/lib/shiftCalc";
+import {
+  splitShiftHours,
+  splitShiftHoursWithOvertime,
+  calcShiftPay,
+  calcShiftPayWithOvertime,
+  formatHoursAsClock,
+} from "@/lib/shiftCalc";
 import { useToast } from "./Toast";
 import Icon from "./Icon";
 
@@ -13,9 +19,16 @@ interface EditShift {
   endTime: string;
 }
 
+interface RateProfile {
+  regularRate: number;
+  shabbatRate: number;
+  overtimeEnabled: boolean;
+}
+
 interface Props {
   onClose: () => void;
   editShift?: EditShift;
+  profile: RateProfile;
 }
 
 const PRESETS = [
@@ -35,7 +48,7 @@ function toDateInputValue(isoStr: string): string {
   return isoStr.split("T")[0];
 }
 
-export default function AddShiftModal({ onClose, editShift }: Props) {
+export default function AddShiftModal({ onClose, editShift, profile }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const { showToast } = useToast();
@@ -60,13 +73,25 @@ export default function AddShiftModal({ onClose, editShift }: Props) {
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  // Live preview — computed inline
+  // Live preview — computed inline. Raw hour split (for the badges below) always
+  // ignores overtime; only the pay estimate needs the overtime-aware breakdown.
   const hasPreview  = startTime !== "" && endTime !== "";
   const previewDate = hasPreview && date ? new Date(date + "T00:00:00") : null;
   const previewSplit = previewDate ? splitShiftHours(previewDate, startTime, endTime) : null;
-  const previewPay   = previewSplit ? Math.round(calcShiftPay(previewSplit.regularHours, previewSplit.shabbatHours)) : 0;
+  const previewOvertime = profile.overtimeEnabled && previewDate
+    ? splitShiftHoursWithOvertime(previewDate, startTime, endTime)
+    : null;
+  const previewOvertimeHours = previewOvertime
+    ? previewOvertime.ot125RegularHours + previewOvertime.ot125ShabbatHours + previewOvertime.ot150RegularHours + previewOvertime.ot150ShabbatHours
+    : 0;
+  const previewPay = previewOvertime
+    ? Math.round(calcShiftPayWithOvertime(previewOvertime, profile.regularRate, profile.shabbatRate))
+    : previewSplit
+    ? Math.round(calcShiftPay(previewSplit.regularHours, previewSplit.shabbatHours, profile.regularRate, profile.shabbatRate))
+    : 0;
   const isMixed       = !!previewSplit && previewSplit.regularHours > 0 && previewSplit.shabbatHours > 0;
   const isPureShabbat = !!previewSplit && previewSplit.regularHours === 0 && previewSplit.shabbatHours > 0;
+  const hasOvertime   = previewOvertimeHours > 0;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -309,6 +334,21 @@ export default function AddShiftModal({ onClose, editShift }: Props) {
                     }}
                   >
                     שבת
+                  </span>
+                )}
+                {hasOvertime && (
+                  <span
+                    style={{
+                      fontSize: 10,
+                      color: "#34e0a1",
+                      background: "rgba(52,224,161,.13)",
+                      borderRadius: 8,
+                      padding: "2px 8px",
+                      fontFamily: "Rubik, sans-serif",
+                      fontWeight: 500,
+                    }}
+                  >
+                    שעות נוספות
                   </span>
                 )}
               </div>

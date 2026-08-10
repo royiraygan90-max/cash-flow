@@ -1,13 +1,10 @@
 import {
-  REGULAR_RATE,
-  SHABBAT_RATE,
-  MONTHLY_BONUS,
-  TRAVEL_ALLOWANCE,
   PENSION_PCT,
   STUDY_FUND_PCT,
   CREDIT_POINTS,
   CREDIT_POINT_VALUE,
 } from "./salaryConstants";
+import { splitShiftHoursWithOvertime } from "./shiftCalc";
 
 // 2026 monthly income tax brackets. First 4 confirmed via official sources (Jan 2026 bracket-widening reform).
 // Top 3 brackets carried over from the original 2025 spec as estimates — irrelevant to this user's actual
@@ -53,9 +50,26 @@ export function calcBituachLeumiHealth(taxableMonthly: number): number {
 
 export const REFERRAL_BONUS_AMOUNT = 1000;
 
+export interface SalaryProfile {
+  regularRate: number;
+  shabbatRate: number;
+  overtimeEnabled: boolean;
+  monthlyBonus: number;
+  travelAllowance: number;
+}
+
+export interface ShiftForPay {
+  date: Date;
+  startTime: string;
+  endTime: string;
+  regularHours: number;
+  shabbatHours: number;
+}
+
 export interface SalaryBreakdown {
   regularPay: number;
   shabbatPay: number;
+  overtimePay: number;
   basePay: number;
   bonus: number;
   referralBonus: number;
@@ -69,13 +83,45 @@ export interface SalaryBreakdown {
   net: number;
 }
 
-export function computeSalary(regularHours: number, shabbatHours: number, referralCount = 0): SalaryBreakdown {
-  const regularPay   = regularHours * REGULAR_RATE;
-  const shabbatPay   = shabbatHours * SHABBAT_RATE;
-  const basePay      = regularPay + shabbatPay;
-  const bonus        = MONTHLY_BONUS;
+export function computeSalary(shifts: ShiftForPay[], profile: SalaryProfile, referralCount = 0): SalaryBreakdown {
+  let regularHours = 0;
+  let shabbatHours = 0;
+  let ot125RegularHours = 0;
+  let ot125ShabbatHours = 0;
+  let ot150RegularHours = 0;
+  let ot150ShabbatHours = 0;
+
+  if (!profile.overtimeEnabled) {
+    // Fast path: stored per-shift totals already split by Shabbat window,
+    // no per-shift recomputation needed since there's no daily threshold to apply.
+    for (const sh of shifts) {
+      regularHours += sh.regularHours;
+      shabbatHours += sh.shabbatHours;
+    }
+  } else {
+    for (const sh of shifts) {
+      const b = splitShiftHoursWithOvertime(sh.date, sh.startTime, sh.endTime);
+      regularHours += b.regularHours;
+      shabbatHours += b.shabbatHours;
+      ot125RegularHours += b.ot125RegularHours;
+      ot125ShabbatHours += b.ot125ShabbatHours;
+      ot150RegularHours += b.ot150RegularHours;
+      ot150ShabbatHours += b.ot150ShabbatHours;
+    }
+  }
+
+  const regularPay = regularHours * profile.regularRate;
+  const shabbatPay = shabbatHours * profile.shabbatRate;
+  const overtimePay =
+    ot125RegularHours * profile.regularRate * 1.25 +
+    ot125ShabbatHours * profile.shabbatRate * 1.25 +
+    ot150RegularHours * profile.regularRate * 1.5 +
+    ot150ShabbatHours * profile.shabbatRate * 1.5;
+
+  const basePay      = regularPay + shabbatPay + overtimePay;
+  const bonus        = profile.monthlyBonus;
   const referralBonus = referralCount * REFERRAL_BONUS_AMOUNT;
-  const travel       = TRAVEL_ALLOWANCE;
+  const travel       = profile.travelAllowance;
 
   // fiscalBase excludes travel — travel is exempt from income tax, Bituach Leumi,
   // pension, and study-fund base per standard Israeli payroll practice.
@@ -92,6 +138,7 @@ export function computeSalary(regularHours: number, shabbatHours: number, referr
   return {
     regularPay,
     shabbatPay,
+    overtimePay,
     basePay,
     bonus,
     referralBonus,

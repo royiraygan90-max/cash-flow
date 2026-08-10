@@ -27,6 +27,12 @@ export default async function ShiftsPage({ searchParams }: PageProps) {
   const regularHours = shifts.reduce((sum, s) => sum + s.regularHours, 0);
   const shabbatHours = shifts.reduce((sum, s) => sum + s.shabbatHours, 0);
 
+  const rateProfile = {
+    regularRate: user.regularRate,
+    shabbatRate: user.shabbatRate,
+    overtimeEnabled: user.overtimeEnabled,
+  };
+
   const serialized = shifts.map((s) => ({
     ...s,
     date:      s.date.toISOString(),
@@ -44,9 +50,9 @@ export default async function ShiftsPage({ searchParams }: PageProps) {
         direction: "rtl",
       }}
     >
-      <ShiftMonthNav month={month} year={year} />
+      <ShiftMonthNav month={month} year={year} profile={rateProfile} />
       <ShiftSummary regularHours={regularHours} shabbatHours={shabbatHours} />
-      <ShiftList shifts={serialized} />
+      <ShiftList shifts={serialized} profile={rateProfile} />
     </main>
   );
 }

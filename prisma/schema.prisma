@@ -13,6 +13,13 @@ model User {
   token     String   @unique
   createdAt DateTime @default(now())
 
+  // Personal salary profile — each user is paid differently.
+  regularRate     Float   @default(69.47)
+  shabbatRate     Float   @default(96)
+  overtimeEnabled Boolean @default(false)
+  monthlyBonus    Float   @default(2000)
+  travelAllowance Float   @default(236)
+
   transactions   Transaction[]
   subscriptions  Subscription[]
   shifts         Shift[]

@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { requirePageUser } from "@/lib/auth";
-import { computeSalary } from "@/lib/salaryCalc";
+import { computeSalary, type SalaryProfile } from "@/lib/salaryCalc";
 import MonthNavigator from "@/app/components/MonthNavigator";
 import BalanceHeroCard from "@/app/components/BalanceHeroCard";
 import InOutRow from "@/app/components/InOutRow";
@@ -51,7 +51,14 @@ export default async function DashboardPage({ searchParams }: PageProps) {
   const regularHours      = monthShifts.reduce((s, sh) => s + sh.regularHours, 0);
   const shabbatHours      = monthShifts.reduce((s, sh) => s + sh.shabbatHours, 0);
   const referralCount     = salarySettings?.referralCount ?? 0;
-  const salary            = computeSalary(regularHours, shabbatHours, referralCount);
+  const salaryProfile: SalaryProfile = {
+    regularRate: user.regularRate,
+    shabbatRate: user.shabbatRate,
+    overtimeEnabled: user.overtimeEnabled,
+    monthlyBonus: user.monthlyBonus,
+    travelAllowance: user.travelAllowance,
+  };
+  const salary            = computeSalary(monthShifts, salaryProfile, referralCount);
   const salaryTransactions = currentTransactions.filter((t) => t.type === "income" && t.category === "משכורת");
   const salaryPaidAmount   = salaryTransactions.reduce((s, t) => s + t.amount, 0);
   const salaryPaid         = salaryTransactions.length > 0;

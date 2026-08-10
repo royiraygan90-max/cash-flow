@@ -24,7 +24,7 @@ const rowStyle: React.CSSProperties = {
 };
 
 export default function GrossCard({ breakdown, shabbatHours, referralCount, month, year }: Props) {
-  const { regularPay, shabbatPay, bonus, travel, gross } = breakdown;
+  const { regularPay, shabbatPay, overtimePay, bonus, travel, gross } = breakdown;
 
   return (
     <div
@@ -67,10 +67,19 @@ export default function GrossCard({ breakdown, shabbatHours, referralCount, mont
           </div>
         )}
 
-        <div style={rowStyle}>
-          <span style={{ color: "#9aa6b4" }}>בונוס קבוע</span>
-          <span style={{ color: "#f2f5f8", direction: "ltr" }}>₪{fmt(bonus)}</span>
-        </div>
+        {overtimePay > 0 && (
+          <div style={rowStyle}>
+            <span style={{ color: "#9aa6b4" }}>שעות נוספות</span>
+            <span style={{ color: "#a78bfa", direction: "ltr" }}>₪{fmt(overtimePay)}</span>
+          </div>
+        )}
+
+        {bonus > 0 && (
+          <div style={rowStyle}>
+            <span style={{ color: "#9aa6b4" }}>בונוס קבוע</span>
+            <span style={{ color: "#f2f5f8", direction: "ltr" }}>₪{fmt(bonus)}</span>
+          </div>
+        )}
 
         <ReferralBonusInput referralCount={referralCount} month={month} year={year} />
 

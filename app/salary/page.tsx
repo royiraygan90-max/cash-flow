@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { requirePageUser } from "@/lib/auth";
-import { computeSalary } from "@/lib/salaryCalc";
+import { computeSalary, type SalaryProfile } from "@/lib/salaryCalc";
 import SalaryMonthNav from "@/app/components/SalaryMonthNav";
 import ShiftSummary from "@/app/components/ShiftSummary";
 import GrossCard from "@/app/components/GrossCard";
@@ -30,7 +30,14 @@ export default async function SalaryPage({ searchParams }: PageProps) {
   const referralCount = salarySettings?.referralCount ?? 0;
   const regularHours  = shifts.reduce((sum, s) => sum + s.regularHours, 0);
   const shabbatHours  = shifts.reduce((sum, s) => sum + s.shabbatHours, 0);
-  const breakdown     = computeSalary(regularHours, shabbatHours, referralCount);
+  const salaryProfile: SalaryProfile = {
+    regularRate: user.regularRate,
+    shabbatRate: user.shabbatRate,
+    overtimeEnabled: user.overtimeEnabled,
+    monthlyBonus: user.monthlyBonus,
+    travelAllowance: user.travelAllowance,
+  };
+  const breakdown     = computeSalary(shifts, salaryProfile, referralCount);
   const noShifts     = regularHours + shabbatHours === 0;
 
   return (
@@ -44,7 +51,7 @@ export default async function SalaryPage({ searchParams }: PageProps) {
         direction: "rtl",
       }}
     >
-      <SalaryMonthNav month={month} year={year} />
+      <SalaryMonthNav month={month} year={year} profile={salaryProfile} />
       <ShiftSummary regularHours={regularHours} shabbatHours={shabbatHours} />
       {noShifts && (
         <p
