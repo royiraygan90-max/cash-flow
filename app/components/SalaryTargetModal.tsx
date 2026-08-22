@@ -127,11 +127,11 @@ export default function SalaryTargetModal({ defaults, onClose }: Props) {
           </div>
 
           <div style={{ display: "flex", gap: 12 }}>
-            <div style={{ ...pillRow, flex: 1 }}>
+            <div style={{ ...pillRow, flex: 1, minWidth: 0 }}>
               <span style={{ fontSize: 12, color: "#7c8896", fontFamily: "Rubik, sans-serif", whiteSpace: "nowrap", flexShrink: 0 }}>תעריף רגיל ₪</span>
               <input type="text" inputMode="decimal" value={regularRate} onChange={(e) => setRegularRate(e.target.value)} style={numberInput} />
             </div>
-            <div style={{ ...pillRow, flex: 1 }}>
+            <div style={{ ...pillRow, flex: 1, minWidth: 0 }}>
               <span style={{ fontSize: 12, color: "#7c8896", fontFamily: "Rubik, sans-serif", whiteSpace: "nowrap", flexShrink: 0 }}>תעריף שבת ₪</span>
               <input type="text" inputMode="decimal" value={shabbatRate} onChange={(e) => setShabbatRate(e.target.value)} style={numberInput} />
             </div>
@@ -199,13 +199,13 @@ export default function SalaryTargetModal({ defaults, onClose }: Props) {
           </div>
 
           <div style={{ display: "flex", gap: 12 }}>
-            <div style={{ flex: 1, background: "#101a16", border: "1px solid #1c3329", borderRadius: 20, padding: "14px 16px" }}>
+            <div style={{ flex: 1, minWidth: 0, background: "#101a16", border: "1px solid #1c3329", borderRadius: 20, padding: "14px 16px" }}>
               <p style={{ fontSize: 11, color: "#5f8a76", marginBottom: 6, fontFamily: "Rubik, sans-serif" }}>שעות רגילות</p>
               <p style={{ fontSize: 23, fontWeight: 600, color: "#34e0a1", fontFamily: "Rubik, sans-serif", direction: "ltr" }}>
                 {formatHoursAsClock(result.regularHours)}
               </p>
             </div>
-            <div style={{ flex: 1, background: "#1e1830", border: "1px solid #2e2350", borderRadius: 20, padding: "14px 16px" }}>
+            <div style={{ flex: 1, minWidth: 0, background: "#1e1830", border: "1px solid #2e2350", borderRadius: 20, padding: "14px 16px" }}>
               <p style={{ fontSize: 11, color: "#8a7fb8", marginBottom: 6, fontFamily: "Rubik, sans-serif" }}>שעות שבת</p>
               <p style={{ fontSize: 23, fontWeight: 600, color: "#a78bfa", fontFamily: "Rubik, sans-serif", direction: "ltr" }}>
                 {formatHoursAsClock(result.shabbatHours)}

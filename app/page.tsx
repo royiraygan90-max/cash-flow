@@ -44,10 +44,12 @@ export default async function DashboardPage({ searchParams }: PageProps) {
   const totalIncome   = totalIncomeRaw - freelanceExpense;
   const totalExpenses = totalExpensesRaw - freelanceExpense;
 
-  const [monthShifts, salarySettings] = await Promise.all([
+  const [monthShifts, salarySettings, categoryBudgets] = await Promise.all([
     prisma.shift.findMany({ where: { userId: user.id, date: { gte: start, lt: end } } }),
     prisma.salarySettings.findUnique({ where: { userId_month_year: { userId: user.id, month, year } } }),
+    prisma.categoryBudget.findMany({ where: { userId: user.id } }),
   ]);
+  const budgets = Object.fromEntries(categoryBudgets.map((b) => [b.category, b.amount]));
   const regularHours      = monthShifts.reduce((s, sh) => s + sh.regularHours, 0);
   const shabbatHours      = monthShifts.reduce((s, sh) => s + sh.shabbatHours, 0);
   const referralCount     = salarySettings?.referralCount ?? 0;
@@ -128,7 +130,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
 
       <SixMonthBarChart data={barData} />
 
-      <CategoryBreakdown data={pieData} />
+      <CategoryBreakdown data={pieData} budgets={budgets} />
 
       {(tradingExpense > 0 || tradingIncome > 0) && (
         <TradingPnlCard expense={tradingExpense} income={tradingIncome} />

@@ -1,5 +1,9 @@
+"use client";
+
+import { useState } from "react";
 import { CATEGORY_COLORS, DEFAULT_CATEGORY_COLOR } from "@/lib/categoryColors";
 import Icon from "./Icon";
+import CategoryBudgetsModal from "./CategoryBudgetsModal";
 
 interface CategoryData {
   name: string;
@@ -8,13 +12,20 @@ interface CategoryData {
 
 interface Props {
   data: CategoryData[];
+  /** Monthly budget per category. Omit for aggregations that aren't a single month (e.g. the yearly report), where a monthly budget wouldn't be a meaningful comparison — the edit control is hidden too in that case. */
+  budgets?: Record<string, number>;
 }
+
+const OVER_BUDGET_COLOR = "#ff6b6b";
 
 function fmt(n: number): string {
   return Math.round(n).toLocaleString("he-IL");
 }
 
-export default function CategoryBreakdown({ data }: Props) {
+export default function CategoryBreakdown({ data, budgets }: Props) {
+  const [budgetsOpen, setBudgetsOpen] = useState(false);
+  const editable = budgets !== undefined;
+
   if (data.length === 0) return null;
 
   const sorted = [...data].sort((a, b) => b.value - a.value);
@@ -30,22 +41,41 @@ export default function CategoryBreakdown({ data }: Props) {
         marginBottom: 12,
       }}
     >
-      <p
-        style={{
-          fontSize: 13,
-          fontWeight: 600,
-          color: "#f2f5f8",
-          marginBottom: 16,
-          fontFamily: "Rubik, sans-serif",
-        }}
-      >
-        לאן הלך הכסף
-      </p>
+      {budgetsOpen && <CategoryBudgetsModal budgets={budgets ?? {}} onClose={() => setBudgetsOpen(false)} />}
+
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+        <p style={{ fontSize: 13, fontWeight: 600, color: "#f2f5f8", fontFamily: "Rubik, sans-serif" }}>
+          לאן הלך הכסף
+        </p>
+        {editable && (
+          <button
+            onClick={() => setBudgetsOpen(true)}
+            aria-label="הגדרת תקציבים"
+            style={{
+              width: 26, height: 26,
+              borderRadius: "50%",
+              background: "#161b22",
+              border: "none",
+              color: "#7c8896",
+              cursor: "pointer",
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}
+          >
+            <Icon name="tune" size={14} />
+          </button>
+        )}
+      </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
         {sorted.map(({ name, value }) => {
           const c = CATEGORY_COLORS[name] ?? DEFAULT_CATEGORY_COLOR;
-          const pct = max > 0 ? (value / max) * 100 : 0;
+          const budget = budgets?.[name];
+          const hasBudget = !!budget && budget > 0;
+          const isOver = hasBudget && value > budget;
+          const pct = hasBudget
+            ? Math.min((value / budget) * 100, 100)
+            : max > 0 ? (value / max) * 100 : 0;
+          const barColor = isOver ? OVER_BUDGET_COLOR : c.color;
 
           return (
             <div key={name}>
@@ -87,17 +117,23 @@ export default function CategoryBreakdown({ data }: Props) {
                   {name}
                 </span>
 
+                {isOver && (
+                  <span style={{ color: OVER_BUDGET_COLOR, display: "flex", flexShrink: 0 }}>
+                    <Icon name="warning" size={15} />
+                  </span>
+                )}
+
                 {/* Amount */}
                 <span
                   dir="ltr"
                   style={{
                     fontSize: 13,
-                    color: "#cdd5de",
+                    color: isOver ? OVER_BUDGET_COLOR : "#cdd5de",
                     fontFamily: "Rubik, sans-serif",
                     flexShrink: 0,
                   }}
                 >
-                  ₪{fmt(value)}
+                  ₪{fmt(value)}{hasBudget && ` / ₪${fmt(budget)}`}
                 </span>
               </div>
 
@@ -115,7 +151,7 @@ export default function CategoryBreakdown({ data }: Props) {
                     height: "100%",
                     width: `${pct}%`,
                     borderRadius: 99,
-                    background: c.color,
+                    background: barColor,
                     transition: "width 0.4s ease",
                   }}
                 />
