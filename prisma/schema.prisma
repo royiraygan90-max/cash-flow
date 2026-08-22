@@ -20,10 +20,11 @@ model User {
   monthlyBonus    Float   @default(2000)
   travelAllowance Float   @default(236)
 
-  transactions   Transaction[]
-  subscriptions  Subscription[]
-  shifts         Shift[]
-  salarySettings SalarySettings[]
+  transactions    Transaction[]
+  subscriptions   Subscription[]
+  shifts          Shift[]
+  salarySettings  SalarySettings[]
+  categoryBudgets CategoryBudget[]
 }
 
 model Transaction {
@@ -84,4 +85,15 @@ model SalarySettings {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, month, year])
+}
+
+model CategoryBudget {
+  id       String @id @default(cuid())
+  category String
+  amount   Float
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, category])
 }
