@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { isOvernightShift, formatHoursAsClock } from "@/lib/shiftCalc";
 import { HEBREW_DAYS } from "@/lib/hebrewDates";
+import type { SalaryProfile } from "@/lib/salaryCalc";
 import AddShiftModal from "./AddShiftModal";
 import Icon from "./Icon";
 
@@ -18,15 +19,10 @@ interface Shift {
   createdAt: string;
 }
 
-interface RateProfile {
-  regularRate: number;
-  shabbatRate: number;
-  overtimeEnabled: boolean;
-}
-
 interface Props {
   shifts: Shift[];
-  profile: RateProfile;
+  profile: SalaryProfile;
+  referralCount: number;
 }
 
 function fmtDate(dateStr: string): string {
@@ -39,7 +35,7 @@ function getDayName(dateStr: string): string {
   return HEBREW_DAYS[d.getDay()];
 }
 
-function ShiftRow({ shift, profile }: { shift: Shift; profile: RateProfile }) {
+function ShiftRow({ shift, profile, otherShifts, referralCount }: { shift: Shift; profile: SalaryProfile; otherShifts: Shift[]; referralCount: number }) {
   const router = useRouter();
   const [confirm, setConfirm] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -58,7 +54,15 @@ function ShiftRow({ shift, profile }: { shift: Shift; profile: RateProfile }) {
 
   return (
     <>
-      {editing && <AddShiftModal editShift={shift} profile={profile} onClose={() => setEditing(false)} />}
+      {editing && (
+        <AddShiftModal
+          editShift={shift}
+          profile={profile}
+          otherShifts={otherShifts}
+          referralCount={referralCount}
+          onClose={() => setEditing(false)}
+        />
+      )}
       <div
         className="group"
         style={{
@@ -188,7 +192,7 @@ function ShiftRow({ shift, profile }: { shift: Shift; profile: RateProfile }) {
   );
 }
 
-export default function ShiftList({ shifts, profile }: Props) {
+export default function ShiftList({ shifts, profile, referralCount }: Props) {
   if (shifts.length === 0) {
     return (
       <div
@@ -218,7 +222,7 @@ export default function ShiftList({ shifts, profile }: Props) {
       }}
     >
       {shifts.map((shift) => (
-        <ShiftRow key={shift.id} shift={shift} profile={profile} />
+        <ShiftRow key={shift.id} shift={shift} profile={profile} otherShifts={shifts} referralCount={referralCount} />
       ))}
     </div>
   );

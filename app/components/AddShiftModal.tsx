@@ -9,6 +9,7 @@ import {
   calcShiftPayWithOvertime,
   formatHoursAsClock,
 } from "@/lib/shiftCalc";
+import { computeSalary, type SalaryProfile, type ShiftForPay } from "@/lib/salaryCalc";
 import { useToast } from "./Toast";
 import Icon from "./Icon";
 
@@ -19,16 +20,32 @@ interface EditShift {
   endTime: string;
 }
 
-interface RateProfile {
-  regularRate: number;
-  shabbatRate: number;
-  overtimeEnabled: boolean;
+export interface OtherShift {
+  id: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  regularHours: number;
+  shabbatHours: number;
 }
 
 interface Props {
   onClose: () => void;
   editShift?: EditShift;
-  profile: RateProfile;
+  profile: SalaryProfile;
+  /** This month's other saved shifts (excluding the one being edited, if any) — used to compute this shift's marginal net against the month's already-accumulated income. */
+  otherShifts: OtherShift[];
+  referralCount?: number;
+}
+
+function toShiftForPay(s: OtherShift): ShiftForPay {
+  return {
+    date: new Date(s.date.split("T")[0] + "T00:00:00"),
+    startTime: s.startTime,
+    endTime: s.endTime,
+    regularHours: s.regularHours,
+    shabbatHours: s.shabbatHours,
+  };
 }
 
 const PRESETS = [
@@ -48,7 +65,7 @@ function toDateInputValue(isoStr: string): string {
   return isoStr.split("T")[0];
 }
 
-export default function AddShiftModal({ onClose, editShift, profile }: Props) {
+export default function AddShiftModal({ onClose, editShift, profile, otherShifts, referralCount = 0 }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const { showToast } = useToast();
@@ -92,6 +109,21 @@ export default function AddShiftModal({ onClose, editShift, profile }: Props) {
   const isMixed       = !!previewSplit && previewSplit.regularHours > 0 && previewSplit.shabbatHours > 0;
   const isPureShabbat = !!previewSplit && previewSplit.regularHours === 0 && previewSplit.shabbatHours > 0;
   const hasOvertime   = previewOvertimeHours > 0;
+
+  // Marginal net: this shift's actual take-home depends on where it lands in the
+  // month's cumulative tax curve, not a flat rate — so we diff computeSalary with
+  // vs. without this shift against the month's other already-entered shifts.
+  const otherShiftsForPay = otherShifts.filter((s) => s.id !== editShift?.id).map(toShiftForPay);
+  const previewNet = previewDate && previewSplit
+    ? Math.round(
+        computeSalary(
+          [...otherShiftsForPay, { date: previewDate, startTime, endTime, regularHours: previewSplit.regularHours, shabbatHours: previewSplit.shabbatHours }],
+          profile,
+          referralCount
+        ).net - computeSalary(otherShiftsForPay, profile, referralCount).net
+      )
+    : 0;
+  const previewDeductionPct = previewPay > 0 ? Math.round((1 - previewNet / previewPay) * 100) : 0;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -319,7 +351,7 @@ export default function AddShiftModal({ onClose, editShift, profile }: Props) {
             >
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <span style={{ fontSize: 14, color: "#9aa6b4", fontFamily: "Rubik, sans-serif" }}>
-                  {formatHoursAsClock(previewSplit.totalHours)} שעות · כ-₪{previewPay.toLocaleString("he-IL")}
+                  {formatHoursAsClock(previewSplit.totalHours)} שעות · כ-₪{previewPay.toLocaleString("he-IL")} ברוטו
                 </span>
                 {isPureShabbat && (
                   <span
@@ -355,6 +387,11 @@ export default function AddShiftModal({ onClose, editShift, profile }: Props) {
               {isMixed && (
                 <span style={{ fontSize: 12, color: "#7c8896", fontFamily: "Rubik, sans-serif" }}>
                   שבת {formatHoursAsClock(previewSplit.shabbatHours)} · רגיל {formatHoursAsClock(previewSplit.regularHours)}
+                </span>
+              )}
+              {previewPay > 0 && (
+                <span style={{ fontSize: 13, color: "#34e0a1", fontFamily: "Rubik, sans-serif", fontWeight: 500 }}>
+                  כ-₪{previewNet.toLocaleString("he-IL")} נטו ({previewDeductionPct}% ניכויים)
                 </span>
               )}
             </div>

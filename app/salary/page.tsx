@@ -51,7 +51,13 @@ export default async function SalaryPage({ searchParams }: PageProps) {
         direction: "rtl",
       }}
     >
-      <SalaryMonthNav month={month} year={year} profile={salaryProfile} />
+      <SalaryMonthNav
+        month={month}
+        year={year}
+        profile={salaryProfile}
+        currentRegularHours={regularHours}
+        currentShabbatHours={shabbatHours}
+      />
       <ShiftSummary regularHours={regularHours} shabbatHours={shabbatHours} />
       {noShifts && (
         <p
