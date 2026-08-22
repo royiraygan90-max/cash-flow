@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Icon from "./Icon";
 import SalarySettingsModal, { type SalaryProfileValues } from "./SalarySettingsModal";
+import SalaryTargetModal from "./SalaryTargetModal";
 
 const HEBREW_MONTHS = [
   "ינואר", "פברואר", "מרץ", "אפריל", "מאי", "יוני",
@@ -14,6 +15,8 @@ interface Props {
   month: number;
   year: number;
   profile: SalaryProfileValues;
+  currentRegularHours?: number;
+  currentShabbatHours?: number;
 }
 
 const navBtn: React.CSSProperties = {
@@ -30,9 +33,10 @@ const navBtn: React.CSSProperties = {
   transition: "color 0.15s, background 0.15s",
 };
 
-export default function SalaryMonthNav({ month, year, profile }: Props) {
+export default function SalaryMonthNav({ month, year, profile, currentRegularHours, currentShabbatHours }: Props) {
   const router = useRouter();
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [targetOpen, setTargetOpen] = useState(false);
 
   function navigate(offset: number) {
     const d = new Date(year, month - 1 + offset, 1);
@@ -52,6 +56,19 @@ export default function SalaryMonthNav({ month, year, profile }: Props) {
       }}
     >
       {settingsOpen && <SalarySettingsModal profile={profile} onClose={() => setSettingsOpen(false)} />}
+      {targetOpen && (
+        <SalaryTargetModal
+          defaults={{
+            regularRate: profile.regularRate,
+            shabbatRate: profile.shabbatRate,
+            monthlyBonus: profile.monthlyBonus,
+            travelAllowance: profile.travelAllowance,
+            currentRegularHours,
+            currentShabbatHours,
+          }}
+          onClose={() => setTargetOpen(false)}
+        />
+      )}
 
       {/* Month label + prev/next */}
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -97,6 +114,17 @@ export default function SalaryMonthNav({ month, year, profile }: Props) {
         >
           שעות עבודה ←
         </a>
+
+        {/* Salary target calculator */}
+        <button
+          onClick={() => setTargetOpen(true)}
+          aria-label="מחשבון יעד משכורת"
+          style={navBtn}
+          onMouseEnter={(e) => { e.currentTarget.style.color = "#f2f5f8"; e.currentTarget.style.background = "#20272f"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.color = "#7c8896"; e.currentTarget.style.background = "#1b2230"; }}
+        >
+          <Icon name="calculate" size={16} />
+        </button>
 
         {/* Salary settings */}
         <button

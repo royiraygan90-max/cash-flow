@@ -152,3 +152,76 @@ export function computeSalary(shifts: ShiftForPay[], profile: SalaryProfile, ref
     net,
   };
 }
+
+export interface SalaryTargetInput {
+  targetNet: number;
+  shabbatShare: number; // 0-1: fraction of worked hours that are Shabbat hours
+  regularRate: number;
+  shabbatRate: number;
+  monthlyBonus: number;
+  travelAllowance: number;
+  referralBonus?: number;
+}
+
+export interface SalaryTargetResult {
+  totalHours: number;
+  regularHours: number;
+  shabbatHours: number;
+  basePay: number;
+  fiscalBase: number;
+  gross: number;
+  net: number;
+}
+
+function netFromFiscalBase(fiscalBase: number, travelAllowance: number): number {
+  const incomeTax          = calcIncomeTax(fiscalBase);
+  const bituachLeumiHealth = calcBituachLeumiHealth(fiscalBase);
+  const pension            = fiscalBase * PENSION_PCT;
+  const studyFund          = fiscalBase * STUDY_FUND_PCT;
+  return fiscalBase + travelAllowance - incomeTax - bituachLeumiHealth - pension - studyFund;
+}
+
+// Inverts computeSalary: given a target net salary and a desired mix of
+// regular vs. Shabbat hours, finds the required hours and gross. Deductions
+// depend only on fiscalBase (not on how it's split between regular/Shabbat
+// pay), and every marginal deduction rate sums to well under 100%, so net is
+// strictly increasing in fiscalBase — a binary search finds the unique match
+// without needing to invert the tax brackets algebraically.
+export function calcHoursForTargetNet(input: SalaryTargetInput): SalaryTargetResult {
+  const {
+    targetNet,
+    shabbatShare,
+    regularRate,
+    shabbatRate,
+    monthlyBonus,
+    travelAllowance,
+    referralBonus = 0,
+  } = input;
+
+  let lo = 0;
+  let hi = Math.max(targetNet, 1000);
+  while (netFromFiscalBase(hi, travelAllowance) < targetNet && hi < 10_000_000) hi *= 2;
+
+  for (let i = 0; i < 60; i++) {
+    const mid = (lo + hi) / 2;
+    if (netFromFiscalBase(mid, travelAllowance) < targetNet) lo = mid;
+    else hi = mid;
+  }
+
+  const fiscalBase   = hi;
+  const basePay      = Math.max(0, fiscalBase - monthlyBonus - referralBonus);
+  const blendedRate  = (1 - shabbatShare) * regularRate + shabbatShare * shabbatRate;
+  const totalHours   = blendedRate > 0 ? basePay / blendedRate : 0;
+  const shabbatHours = totalHours * shabbatShare;
+  const regularHours = totalHours - shabbatHours;
+
+  return {
+    totalHours,
+    regularHours,
+    shabbatHours,
+    basePay,
+    fiscalBase,
+    gross: fiscalBase + travelAllowance,
+    net: netFromFiscalBase(fiscalBase, travelAllowance),
+  };
+}
