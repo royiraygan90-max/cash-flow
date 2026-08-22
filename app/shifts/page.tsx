@@ -19,18 +19,24 @@ export default async function ShiftsPage({ searchParams }: PageProps) {
   const start = new Date(year, month - 1, 1);
   const end   = new Date(year, month, 1);
 
-  const shifts = await prisma.shift.findMany({
-    where: { userId: user.id, date: { gte: start, lt: end } },
-    orderBy: { date: "asc" },
-  });
+  const [shifts, salarySettings] = await Promise.all([
+    prisma.shift.findMany({
+      where: { userId: user.id, date: { gte: start, lt: end } },
+      orderBy: { date: "asc" },
+    }),
+    prisma.salarySettings.findUnique({ where: { userId_month_year: { userId: user.id, month, year } } }),
+  ]);
 
   const regularHours = shifts.reduce((sum, s) => sum + s.regularHours, 0);
   const shabbatHours = shifts.reduce((sum, s) => sum + s.shabbatHours, 0);
+  const referralCount = salarySettings?.referralCount ?? 0;
 
-  const rateProfile = {
+  const salaryProfile = {
     regularRate: user.regularRate,
     shabbatRate: user.shabbatRate,
     overtimeEnabled: user.overtimeEnabled,
+    monthlyBonus: user.monthlyBonus,
+    travelAllowance: user.travelAllowance,
   };
 
   const serialized = shifts.map((s) => ({
@@ -50,9 +56,9 @@ export default async function ShiftsPage({ searchParams }: PageProps) {
         direction: "rtl",
       }}
     >
-      <ShiftMonthNav month={month} year={year} profile={rateProfile} />
+      <ShiftMonthNav month={month} year={year} profile={salaryProfile} shifts={serialized} referralCount={referralCount} />
       <ShiftSummary regularHours={regularHours} shabbatHours={shabbatHours} />
-      <ShiftList shifts={serialized} profile={rateProfile} />
+      <ShiftList shifts={serialized} profile={salaryProfile} referralCount={referralCount} />
     </main>
   );
 }

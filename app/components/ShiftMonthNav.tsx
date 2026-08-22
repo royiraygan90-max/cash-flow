@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import AddShiftModal from "./AddShiftModal";
+import type { SalaryProfile } from "@/lib/salaryCalc";
+import AddShiftModal, { type OtherShift } from "./AddShiftModal";
 import Icon from "./Icon";
 
 const HEBREW_MONTHS = [
@@ -10,16 +11,12 @@ const HEBREW_MONTHS = [
   "יולי", "אוגוסט", "ספטמבר", "אוקטובר", "נובמבר", "דצמבר",
 ];
 
-interface RateProfile {
-  regularRate: number;
-  shabbatRate: number;
-  overtimeEnabled: boolean;
-}
-
 interface Props {
   month: number;
   year: number;
-  profile: RateProfile;
+  profile: SalaryProfile;
+  shifts: OtherShift[];
+  referralCount: number;
 }
 
 const navBtn: React.CSSProperties = {
@@ -36,7 +33,7 @@ const navBtn: React.CSSProperties = {
   transition: "color 0.15s, background 0.15s",
 };
 
-export default function ShiftMonthNav({ month, year, profile }: Props) {
+export default function ShiftMonthNav({ month, year, profile, shifts, referralCount }: Props) {
   const router = useRouter();
   const [modalOpen, setModalOpen] = useState(false);
 
@@ -47,7 +44,14 @@ export default function ShiftMonthNav({ month, year, profile }: Props) {
 
   return (
     <>
-      {modalOpen && <AddShiftModal profile={profile} onClose={() => setModalOpen(false)} />}
+      {modalOpen && (
+        <AddShiftModal
+          profile={profile}
+          otherShifts={shifts}
+          referralCount={referralCount}
+          onClose={() => setModalOpen(false)}
+        />
+      )}
 
       <div
         style={{
