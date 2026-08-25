@@ -65,6 +65,13 @@ export default async function DashboardPage({ searchParams }: PageProps) {
   const salaryPaidAmount   = salaryTransactions.reduce((s, t) => s + t.amount, 0);
   const salaryPaid         = salaryTransactions.length > 0;
 
+  // Only project once salary hasn't been paid yet this month — once it's in,
+  // it's already part of totalIncome, and shift-logging is often incomplete
+  // by payday, so comparing salary.net against salaryPaidAmount isn't reliable.
+  const projectedBalance = !salaryPaid && (regularHours + shabbatHours) > 0
+    ? Math.round((totalIncome - totalExpenses) + salary.net)
+    : null;
+
   const barData = await Promise.all(
     Array.from({ length: 6 }, (_, i) => {
       const d = new Date(year, month - 1 - 5 + i, 1);
@@ -111,7 +118,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
     >
       <MonthNavigator month={month} year={year} />
 
-      <BalanceHeroCard totalIncome={totalIncome} totalExpenses={totalExpenses} />
+      <BalanceHeroCard totalIncome={totalIncome} totalExpenses={totalExpenses} projectedBalance={projectedBalance} />
 
       <InOutRow totalIncome={totalIncome} totalExpenses={totalExpenses} />
 

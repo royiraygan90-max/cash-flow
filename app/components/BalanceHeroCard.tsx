@@ -3,15 +3,19 @@ import Icon from "./Icon";
 interface Props {
   totalIncome: number;
   totalExpenses: number;
+  /** Balance projected once this month's remaining expected salary comes in. Omit/null to hide — e.g. when salary already paid in full or there's no salary data yet. */
+  projectedBalance?: number | null;
 }
 
 function fmt(n: number): string {
   return Math.abs(n).toLocaleString("he-IL");
 }
 
-export default function BalanceHeroCard({ totalIncome, totalExpenses }: Props) {
+export default function BalanceHeroCard({ totalIncome, totalExpenses, projectedBalance }: Props) {
   const balance = totalIncome - totalExpenses;
   const isPositive = balance > 0;
+  const showProjection = projectedBalance !== null && projectedBalance !== undefined;
+  const projectedPositive = showProjection && projectedBalance > 0;
 
   return (
     <div
@@ -62,6 +66,25 @@ export default function BalanceHeroCard({ totalIncome, totalExpenses }: Props) {
           {isPositive ? "מאזן חיובי החודש" : "הוצאת יותר ממה שנכנס"}
         </span>
       </div>
+
+      {showProjection && (
+        <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid #20272f" }}>
+          <p style={{ fontSize: 11, color: "#7c8896", marginBottom: 4, fontFamily: "Rubik, sans-serif" }}>
+            צפוי להישאר עם המשכורת
+          </p>
+          <p
+            style={{
+              fontSize: 22,
+              fontWeight: 600,
+              color: projectedPositive ? "#34e0a1" : "#ff6b6b",
+              fontFamily: "Rubik, sans-serif",
+              direction: "ltr",
+            }}
+          >
+            {projectedPositive ? "" : "−"}₪{fmt(projectedBalance!)}
+          </p>
+        </div>
+      )}
     </div>
   );
 }
