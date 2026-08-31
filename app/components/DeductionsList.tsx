@@ -19,7 +19,7 @@ const rowStyle: React.CSSProperties = {
 };
 
 export default function DeductionsList({ breakdown }: Props) {
-  const { incomeTax, bituachLeumiHealth, pension, studyFund, totalDeductions } = breakdown;
+  const { incomeTax, bituachLeumiHealth, pension, studyFund, otherDeductions, totalDeductions } = breakdown;
 
   return (
     <div
@@ -55,6 +55,13 @@ export default function DeductionsList({ breakdown }: Props) {
           <span style={{ color: "#9aa6b4" }}>קרן השתלמות</span>
           <span style={{ color: "#9aa6b4", direction: "ltr" }}>−₪{fmt(studyFund)}</span>
         </div>
+
+        {otherDeductions > 0 && (
+          <div style={rowStyle}>
+            <span style={{ color: "#9aa6b4" }}>ניכויים קבועים נוספים</span>
+            <span style={{ color: "#9aa6b4", direction: "ltr" }}>−₪{fmt(otherDeductions)}</span>
+          </div>
+        )}
 
         <div style={{ borderTop: "1px solid #20272f", margin: "8px 0" }} />
 

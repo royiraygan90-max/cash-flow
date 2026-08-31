@@ -19,6 +19,7 @@ model User {
   overtimeEnabled Boolean @default(false)
   monthlyBonus    Float   @default(2000)
   travelAllowance Float   @default(236)
+  otherDeductions Float   @default(0)
 
   transactions    Transaction[]
   subscriptions   Subscription[]

@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import type { SalaryProfile } from "@/lib/salaryCalc";
 import Icon from "./Icon";
-import SalarySettingsModal, { type SalaryProfileValues } from "./SalarySettingsModal";
+import SalarySettingsModal from "./SalarySettingsModal";
 import SalaryTargetModal from "./SalaryTargetModal";
 
 const HEBREW_MONTHS = [
@@ -14,7 +15,7 @@ const HEBREW_MONTHS = [
 interface Props {
   month: number;
   year: number;
-  profile: SalaryProfileValues;
+  profile: SalaryProfile;
   currentRegularHours?: number;
   currentShabbatHours?: number;
 }
@@ -63,6 +64,7 @@ export default function SalaryMonthNav({ month, year, profile, currentRegularHou
             shabbatRate: profile.shabbatRate,
             monthlyBonus: profile.monthlyBonus,
             travelAllowance: profile.travelAllowance,
+            otherDeductions: profile.otherDeductions,
             currentRegularHours,
             currentShabbatHours,
           }}

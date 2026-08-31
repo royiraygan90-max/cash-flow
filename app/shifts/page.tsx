@@ -37,6 +37,7 @@ export default async function ShiftsPage({ searchParams }: PageProps) {
     overtimeEnabled: user.overtimeEnabled,
     monthlyBonus: user.monthlyBonus,
     travelAllowance: user.travelAllowance,
+    otherDeductions: user.otherDeductions,
   };
 
   const serialized = shifts.map((s) => ({

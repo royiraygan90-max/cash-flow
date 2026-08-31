@@ -56,6 +56,8 @@ export interface SalaryProfile {
   overtimeEnabled: boolean;
   monthlyBonus: number;
   travelAllowance: number;
+  /** Flat monthly deduction outside standard payroll tax (e.g. union/professional dues) — not tied to hours worked. */
+  otherDeductions: number;
 }
 
 export interface ShiftForPay {
@@ -79,6 +81,7 @@ export interface SalaryBreakdown {
   bituachLeumiHealth: number;
   pension: number;
   studyFund: number;
+  otherDeductions: number;
   totalDeductions: number;
   net: number;
 }
@@ -128,11 +131,17 @@ export function computeSalary(shifts: ShiftForPay[], profile: SalaryProfile, ref
   const fiscalBase = basePay + bonus + referralBonus;
   const gross      = fiscalBase + travel;
 
+  // Pension is calculated on basePay only — bonuses and referral bonuses are
+  // typically not pensionable. Note this is still an approximation: real
+  // pensionable/study-fund-eligible salary is often pinned by the employer's
+  // agreement to a near-fixed reference wage rather than actual hours worked
+  // that month, which this model can't replicate without that reference figure.
   const incomeTax           = calcIncomeTax(fiscalBase);
   const bituachLeumiHealth  = calcBituachLeumiHealth(fiscalBase);
-  const pension             = fiscalBase * PENSION_PCT;
+  const pension             = basePay * PENSION_PCT;
   const studyFund           = fiscalBase * STUDY_FUND_PCT;
-  const totalDeductions     = incomeTax + bituachLeumiHealth + pension + studyFund;
+  const otherDeductions     = profile.otherDeductions;
+  const totalDeductions     = incomeTax + bituachLeumiHealth + pension + studyFund + otherDeductions;
   const net                 = gross - totalDeductions;
 
   return {
@@ -148,6 +157,7 @@ export function computeSalary(shifts: ShiftForPay[], profile: SalaryProfile, ref
     bituachLeumiHealth,
     pension,
     studyFund,
+    otherDeductions,
     totalDeductions,
     net,
   };
@@ -161,6 +171,7 @@ export interface SalaryTargetInput {
   monthlyBonus: number;
   travelAllowance: number;
   referralBonus?: number;
+  otherDeductions?: number;
 }
 
 export interface SalaryTargetResult {
@@ -173,20 +184,29 @@ export interface SalaryTargetResult {
   net: number;
 }
 
-function netFromFiscalBase(fiscalBase: number, travelAllowance: number): number {
+// Pension is basePay-only (see computeSalary), so unlike the other deductions
+// it isn't a pure function of fiscalBase — search over basePay directly, with
+// bonus/referralBonus/travelAllowance/otherDeductions as fixed known terms.
+function netFromBasePay(
+  basePay: number,
+  bonus: number,
+  referralBonus: number,
+  travelAllowance: number,
+  otherDeductions: number
+): number {
+  const fiscalBase         = basePay + bonus + referralBonus;
   const incomeTax          = calcIncomeTax(fiscalBase);
   const bituachLeumiHealth = calcBituachLeumiHealth(fiscalBase);
-  const pension            = fiscalBase * PENSION_PCT;
+  const pension            = basePay * PENSION_PCT;
   const studyFund          = fiscalBase * STUDY_FUND_PCT;
-  return fiscalBase + travelAllowance - incomeTax - bituachLeumiHealth - pension - studyFund;
+  return fiscalBase + travelAllowance - incomeTax - bituachLeumiHealth - pension - studyFund - otherDeductions;
 }
 
 // Inverts computeSalary: given a target net salary and a desired mix of
-// regular vs. Shabbat hours, finds the required hours and gross. Deductions
-// depend only on fiscalBase (not on how it's split between regular/Shabbat
-// pay), and every marginal deduction rate sums to well under 100%, so net is
-// strictly increasing in fiscalBase — a binary search finds the unique match
-// without needing to invert the tax brackets algebraically.
+// regular vs. Shabbat hours, finds the required hours and gross. Every
+// marginal deduction rate sums to well under 100%, so net is strictly
+// increasing in basePay — a binary search finds the unique match without
+// needing to invert the tax brackets algebraically.
 export function calcHoursForTargetNet(input: SalaryTargetInput): SalaryTargetResult {
   const {
     targetNet,
@@ -196,20 +216,23 @@ export function calcHoursForTargetNet(input: SalaryTargetInput): SalaryTargetRes
     monthlyBonus,
     travelAllowance,
     referralBonus = 0,
+    otherDeductions = 0,
   } = input;
+
+  const net = (basePay: number) => netFromBasePay(basePay, monthlyBonus, referralBonus, travelAllowance, otherDeductions);
 
   let lo = 0;
   let hi = Math.max(targetNet, 1000);
-  while (netFromFiscalBase(hi, travelAllowance) < targetNet && hi < 10_000_000) hi *= 2;
+  while (net(hi) < targetNet && hi < 10_000_000) hi *= 2;
 
   for (let i = 0; i < 60; i++) {
     const mid = (lo + hi) / 2;
-    if (netFromFiscalBase(mid, travelAllowance) < targetNet) lo = mid;
+    if (net(mid) < targetNet) lo = mid;
     else hi = mid;
   }
 
-  const fiscalBase   = hi;
-  const basePay      = Math.max(0, fiscalBase - monthlyBonus - referralBonus);
+  const basePay      = hi;
+  const fiscalBase   = basePay + monthlyBonus + referralBonus;
   const blendedRate  = (1 - shabbatShare) * regularRate + shabbatShare * shabbatRate;
   const totalHours   = blendedRate > 0 ? basePay / blendedRate : 0;
   const shabbatHours = totalHours * shabbatShare;
@@ -222,6 +245,6 @@ export function calcHoursForTargetNet(input: SalaryTargetInput): SalaryTargetRes
     basePay,
     fiscalBase,
     gross: fiscalBase + travelAllowance,
-    net: netFromFiscalBase(fiscalBase, travelAllowance),
+    net: net(basePay),
   };
 }

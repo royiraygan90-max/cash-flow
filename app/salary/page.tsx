@@ -36,6 +36,7 @@ export default async function SalaryPage({ searchParams }: PageProps) {
     overtimeEnabled: user.overtimeEnabled,
     monthlyBonus: user.monthlyBonus,
     travelAllowance: user.travelAllowance,
+    otherDeductions: user.otherDeductions,
   };
   const breakdown     = computeSalary(shifts, salaryProfile, referralCount);
   const noShifts     = regularHours + shabbatHours === 0;

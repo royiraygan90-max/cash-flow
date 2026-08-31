@@ -7,15 +7,16 @@ export async function PUT(req: NextRequest) {
   if ("error" in auth) return auth.error;
   const { user } = auth;
 
-  const { regularRate, shabbatRate, overtimeEnabled, monthlyBonus, travelAllowance } = await req.json();
+  const { regularRate, shabbatRate, overtimeEnabled, monthlyBonus, travelAllowance, otherDeductions } = await req.json();
 
   const parsedRegularRate = parseFloat(regularRate);
   const parsedShabbatRate = parseFloat(shabbatRate);
   const parsedMonthlyBonus = parseFloat(monthlyBonus);
   const parsedTravelAllowance = parseFloat(travelAllowance);
+  const parsedOtherDeductions = parseFloat(otherDeductions ?? 0);
 
   if (
-    [parsedRegularRate, parsedShabbatRate, parsedMonthlyBonus, parsedTravelAllowance].some(
+    [parsedRegularRate, parsedShabbatRate, parsedMonthlyBonus, parsedTravelAllowance, parsedOtherDeductions].some(
       (n) => isNaN(n) || n < 0
     )
   ) {
@@ -30,6 +31,7 @@ export async function PUT(req: NextRequest) {
       overtimeEnabled: !!overtimeEnabled,
       monthlyBonus: parsedMonthlyBonus,
       travelAllowance: parsedTravelAllowance,
+      otherDeductions: parsedOtherDeductions,
     },
   });
 
@@ -39,5 +41,6 @@ export async function PUT(req: NextRequest) {
     overtimeEnabled: updated.overtimeEnabled,
     monthlyBonus: updated.monthlyBonus,
     travelAllowance: updated.travelAllowance,
+    otherDeductions: updated.otherDeductions,
   });
 }
