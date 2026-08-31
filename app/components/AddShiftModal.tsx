@@ -76,6 +76,7 @@ export default function AddShiftModal({ onClose, editShift, profile, otherShifts
   const [date, setDate]           = useState(() => editShift ? toDateInputValue(editShift.date) : todayLocal());
   const [startTime, setStartTime] = useState(editShift?.startTime ?? "");
   const [endTime, setEndTime]     = useState(editShift?.endTime ?? "");
+  const [showDeductions, setShowDeductions] = useState(false);
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
@@ -112,17 +113,28 @@ export default function AddShiftModal({ onClose, editShift, profile, otherShifts
 
   // Marginal net: this shift's actual take-home depends on where it lands in the
   // month's cumulative tax curve, not a flat rate — so we diff computeSalary with
-  // vs. without this shift against the month's other already-entered shifts.
+  // vs. without this shift against the month's other already-entered shifts. Keep
+  // the full per-category deltas (not just net) so the breakdown popover can show
+  // exactly which deduction this shift is contributing to.
   const otherShiftsForPay = otherShifts.filter((s) => s.id !== editShift?.id).map(toShiftForPay);
-  const previewNet = previewDate && previewSplit
-    ? Math.round(
-        computeSalary(
+  const previewBreakdown = previewDate && previewSplit
+    ? (() => {
+        const withShift = computeSalary(
           [...otherShiftsForPay, { date: previewDate, startTime, endTime, regularHours: previewSplit.regularHours, shabbatHours: previewSplit.shabbatHours }],
           profile,
           referralCount
-        ).net - computeSalary(otherShiftsForPay, profile, referralCount).net
-      )
-    : 0;
+        );
+        const withoutShift = computeSalary(otherShiftsForPay, profile, referralCount);
+        return {
+          net:                Math.round(withShift.net - withoutShift.net),
+          incomeTax:          Math.round(withShift.incomeTax - withoutShift.incomeTax),
+          bituachLeumiHealth: Math.round(withShift.bituachLeumiHealth - withoutShift.bituachLeumiHealth),
+          pension:            Math.round(withShift.pension - withoutShift.pension),
+          studyFund:          Math.round(withShift.studyFund - withoutShift.studyFund),
+        };
+      })()
+    : null;
+  const previewNet = previewBreakdown?.net ?? 0;
   const previewDeductionPct = previewPay > 0 ? Math.round((1 - previewNet / previewPay) * 100) : 0;
 
   async function handleSubmit(e: React.FormEvent) {
@@ -390,10 +402,93 @@ export default function AddShiftModal({ onClose, editShift, profile, otherShifts
                 </span>
               )}
               {previewPay > 0 && (
-                <span style={{ fontSize: 13, color: "#34e0a1", fontFamily: "Rubik, sans-serif", fontWeight: 500 }}>
+                <button
+                  type="button"
+                  onClick={() => setShowDeductions(true)}
+                  style={{
+                    fontSize: 13,
+                    color: "#34e0a1",
+                    fontFamily: "Rubik, sans-serif",
+                    fontWeight: 500,
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    padding: 0,
+                    textDecoration: "underline",
+                    textDecorationStyle: "dotted",
+                    textUnderlineOffset: 3,
+                  }}
+                >
                   כ-₪{previewNet.toLocaleString("he-IL")} נטו ({previewDeductionPct}% ניכויים)
-                </span>
+                </button>
               )}
+            </div>
+          )}
+
+          {showDeductions && previewBreakdown && (
+            <div
+              style={{
+                position: "fixed", inset: 0,
+                background: "rgba(0,0,0,0.6)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                zIndex: 60,
+                padding: 16,
+                direction: "rtl",
+              }}
+              onClick={(e) => e.target === e.currentTarget && setShowDeductions(false)}
+            >
+              <div
+                style={{
+                  background: "#0d1014",
+                  border: "1px solid #20272f",
+                  borderRadius: 24,
+                  boxShadow: "0 20px 60px rgba(0,0,0,0.6)",
+                  padding: 24,
+                  width: "100%",
+                  maxWidth: 320,
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+                  <button
+                    type="button"
+                    onClick={() => setShowDeductions(false)}
+                    style={{ width: 28, height: 28, borderRadius: "50%", background: "#161b22", border: "none", color: "#9aa6b4", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                  >
+                    <Icon name="close" size={16} />
+                  </button>
+                  <h3 style={{ fontSize: 15, fontWeight: 600, color: "#f2f5f8", fontFamily: "Rubik, sans-serif" }}>
+                    פירוט ניכויים למשמרת
+                  </h3>
+                  <div style={{ width: 28 }} />
+                </div>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {[
+                    { label: "מס הכנסה", value: previewBreakdown.incomeTax },
+                    { label: "ביטוח לאומי ובריאות", value: previewBreakdown.bituachLeumiHealth },
+                    { label: "פנסיה", value: previewBreakdown.pension },
+                    { label: "קרן השתלמות", value: previewBreakdown.studyFund },
+                  ].map((row) => (
+                    <div key={row.label} style={{ display: "flex", justifyContent: "space-between", fontSize: 13, fontFamily: "Rubik, sans-serif" }}>
+                      <span style={{ color: "#9aa6b4" }}>{row.label}</span>
+                      <span style={{ color: "#ff8f8f", direction: "ltr" }}>−₪{row.value.toLocaleString("he-IL")}</span>
+                    </div>
+                  ))}
+
+                  <div style={{ borderTop: "1px solid #20272f", margin: "6px 0" }} />
+
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, fontWeight: 600, fontFamily: "Rubik, sans-serif" }}>
+                    <span style={{ color: "#f2f5f8" }}>סה״כ ניכויים</span>
+                    <span style={{ color: "#f2f5f8", direction: "ltr" }}>−₪{(previewPay - previewNet).toLocaleString("he-IL")}</span>
+                  </div>
+                </div>
+
+                <p style={{ fontSize: 11, color: "#5c6776", fontFamily: "Rubik, sans-serif", textAlign: "center", marginTop: 14, lineHeight: 1.5 }}>
+                  מחושב לפי המדרגה השולית שאליה המשמרת מצטרפת החודש, לא לפי אחוז קבוע
+                </p>
+              </div>
             </div>
           )}
 

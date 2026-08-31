@@ -2,19 +2,12 @@
 
 import { useState, useEffect, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import type { SalaryProfile } from "@/lib/salaryCalc";
 import { useToast } from "./Toast";
 import Icon from "./Icon";
 
-export interface SalaryProfileValues {
-  regularRate: number;
-  shabbatRate: number;
-  overtimeEnabled: boolean;
-  monthlyBonus: number;
-  travelAllowance: number;
-}
-
 interface Props {
-  profile: SalaryProfileValues;
+  profile: SalaryProfile;
   onClose: () => void;
 }
 
@@ -30,6 +23,7 @@ export default function SalarySettingsModal({ profile, onClose }: Props) {
   const [overtimeEnabled, setOvertimeEnabled] = useState(profile.overtimeEnabled);
   const [monthlyBonus, setMonthlyBonus] = useState(String(profile.monthlyBonus));
   const [travelAllowance, setTravelAllowance] = useState(String(profile.travelAllowance));
+  const [otherDeductions, setOtherDeductions] = useState(String(profile.otherDeductions));
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
@@ -51,7 +45,7 @@ export default function SalarySettingsModal({ profile, onClose }: Props) {
       const res = await fetch("/api/salary-profile", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ regularRate, shabbatRate, overtimeEnabled, monthlyBonus, travelAllowance }),
+        body: JSON.stringify({ regularRate, shabbatRate, overtimeEnabled, monthlyBonus, travelAllowance, otherDeductions }),
       });
       if (!res.ok) throw new Error("save failed");
       showToast({ type: "success", message: "הגדרות השכר נשמרו" });
@@ -138,6 +132,16 @@ export default function SalarySettingsModal({ profile, onClose }: Props) {
           <div style={pillRow}>
             <span style={{ fontSize: 13, color: "#7c8896", fontFamily: "Rubik, sans-serif", whiteSpace: "nowrap", flexShrink: 0 }}>נסיעות ₪</span>
             <input type="text" inputMode="decimal" value={travelAllowance} onChange={(e) => setTravelAllowance(e.target.value)} required style={numberInput} />
+          </div>
+
+          <div style={pillRow}>
+            <div>
+              <span style={{ fontSize: 13, color: "#7c8896", fontFamily: "Rubik, sans-serif", whiteSpace: "nowrap", display: "block" }}>ניכויים קבועים נוספים ₪</span>
+              <span style={{ fontSize: 11, color: "#5c6776", fontFamily: "Rubik, sans-serif", display: "block", marginTop: 4, lineHeight: 1.5 }}>
+                למשל דמי טיפול/ועד — סכום קבוע שיורד כל חודש בלי קשר לשעות
+              </span>
+            </div>
+            <input type="text" inputMode="decimal" value={otherDeductions} onChange={(e) => setOtherDeductions(e.target.value)} required style={{ ...numberInput, flexShrink: 0, width: 70 }} />
           </div>
 
           <label style={{ ...pillRow, cursor: "pointer", alignItems: "flex-start" }}>
