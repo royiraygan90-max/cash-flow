@@ -58,6 +58,14 @@ export interface SalaryProfile {
   travelAllowance: number;
   /** Flat monthly deduction outside standard payroll tax (e.g. union/professional dues) — not tied to hours worked. */
   otherDeductions: number;
+  /**
+   * Reference wage the study fund (קרן השתלמות) is calculated on. Confirmed
+   * against real payslips across 3 months (₪6,735.80, ₪6,735.80, ₪6,741.30)
+   * to be a near-fixed employer-set figure, not a function of actual hours
+   * worked — net pay swung ~10% across those same months while this barely
+   * moved. Editable per-user since it's specific to their agreement.
+   */
+  studyFundBase: number;
 }
 
 export interface ShiftForPay {
@@ -132,14 +140,12 @@ export function computeSalary(shifts: ShiftForPay[], profile: SalaryProfile, ref
   const gross      = fiscalBase + travel;
 
   // Pension is calculated on basePay only — bonuses and referral bonuses are
-  // typically not pensionable. Note this is still an approximation: real
-  // pensionable/study-fund-eligible salary is often pinned by the employer's
-  // agreement to a near-fixed reference wage rather than actual hours worked
-  // that month, which this model can't replicate without that reference figure.
+  // typically not pensionable. Study fund is calculated on its own fixed
+  // reference wage (see SalaryProfile.studyFundBase), not actual pay.
   const incomeTax           = calcIncomeTax(fiscalBase);
   const bituachLeumiHealth  = calcBituachLeumiHealth(fiscalBase);
   const pension             = basePay * PENSION_PCT;
-  const studyFund           = fiscalBase * STUDY_FUND_PCT;
+  const studyFund           = profile.studyFundBase * STUDY_FUND_PCT;
   const otherDeductions     = profile.otherDeductions;
   const totalDeductions     = incomeTax + bituachLeumiHealth + pension + studyFund + otherDeductions;
   const net                 = gross - totalDeductions;
@@ -172,6 +178,7 @@ export interface SalaryTargetInput {
   travelAllowance: number;
   referralBonus?: number;
   otherDeductions?: number;
+  studyFundBase?: number;
 }
 
 export interface SalaryTargetResult {
@@ -184,21 +191,24 @@ export interface SalaryTargetResult {
   net: number;
 }
 
-// Pension is basePay-only (see computeSalary), so unlike the other deductions
-// it isn't a pure function of fiscalBase — search over basePay directly, with
-// bonus/referralBonus/travelAllowance/otherDeductions as fixed known terms.
+// Pension is basePay-only and study fund is a fixed reference wage (see
+// computeSalary), so unlike income tax/BL-health they aren't pure functions
+// of fiscalBase — search over basePay directly, with
+// bonus/referralBonus/travelAllowance/otherDeductions/studyFundBase as fixed
+// known terms.
 function netFromBasePay(
   basePay: number,
   bonus: number,
   referralBonus: number,
   travelAllowance: number,
-  otherDeductions: number
+  otherDeductions: number,
+  studyFundBase: number
 ): number {
   const fiscalBase         = basePay + bonus + referralBonus;
   const incomeTax          = calcIncomeTax(fiscalBase);
   const bituachLeumiHealth = calcBituachLeumiHealth(fiscalBase);
   const pension            = basePay * PENSION_PCT;
-  const studyFund          = fiscalBase * STUDY_FUND_PCT;
+  const studyFund          = studyFundBase * STUDY_FUND_PCT;
   return fiscalBase + travelAllowance - incomeTax - bituachLeumiHealth - pension - studyFund - otherDeductions;
 }
 
@@ -217,9 +227,10 @@ export function calcHoursForTargetNet(input: SalaryTargetInput): SalaryTargetRes
     travelAllowance,
     referralBonus = 0,
     otherDeductions = 0,
+    studyFundBase = 0,
   } = input;
 
-  const net = (basePay: number) => netFromBasePay(basePay, monthlyBonus, referralBonus, travelAllowance, otherDeductions);
+  const net = (basePay: number) => netFromBasePay(basePay, monthlyBonus, referralBonus, travelAllowance, otherDeductions, studyFundBase);
 
   let lo = 0;
   let hi = Math.max(targetNet, 1000);

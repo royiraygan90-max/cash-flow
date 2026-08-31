@@ -20,6 +20,7 @@ model User {
   monthlyBonus    Float   @default(2000)
   travelAllowance Float   @default(236)
   otherDeductions Float   @default(0)
+  studyFundBase   Float   @default(6738)
 
   transactions    Transaction[]
   subscriptions   Subscription[]

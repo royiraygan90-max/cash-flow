@@ -24,6 +24,7 @@ export default function SalarySettingsModal({ profile, onClose }: Props) {
   const [monthlyBonus, setMonthlyBonus] = useState(String(profile.monthlyBonus));
   const [travelAllowance, setTravelAllowance] = useState(String(profile.travelAllowance));
   const [otherDeductions, setOtherDeductions] = useState(String(profile.otherDeductions));
+  const [studyFundBase, setStudyFundBase] = useState(String(profile.studyFundBase));
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
@@ -45,7 +46,7 @@ export default function SalarySettingsModal({ profile, onClose }: Props) {
       const res = await fetch("/api/salary-profile", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ regularRate, shabbatRate, overtimeEnabled, monthlyBonus, travelAllowance, otherDeductions }),
+        body: JSON.stringify({ regularRate, shabbatRate, overtimeEnabled, monthlyBonus, travelAllowance, otherDeductions, studyFundBase }),
       });
       if (!res.ok) throw new Error("save failed");
       showToast({ type: "success", message: "הגדרות השכר נשמרו" });
@@ -79,6 +80,22 @@ export default function SalarySettingsModal({ profile, onClose }: Props) {
     flex: 1,
     direction: "ltr",
     minWidth: 0,
+  };
+
+  // For rows with a wrapping multi-line label: a non-auto flex-basis (from
+  // numberInput's flex:1) takes precedence over width, so a fixed-width
+  // input here needs its own flex-less style, not a spread + width override.
+  const fixedNumberInput: React.CSSProperties = {
+    background: "transparent",
+    border: "none",
+    outline: "none",
+    color: "#f2f5f8",
+    fontSize: 16,
+    fontFamily: "Rubik, sans-serif",
+    textAlign: "left",
+    direction: "ltr",
+    flexShrink: 0,
+    width: 70,
   };
 
   const modalStyle: React.CSSProperties = isMobile
@@ -135,13 +152,23 @@ export default function SalarySettingsModal({ profile, onClose }: Props) {
           </div>
 
           <div style={pillRow}>
-            <div>
-              <span style={{ fontSize: 13, color: "#7c8896", fontFamily: "Rubik, sans-serif", whiteSpace: "nowrap", display: "block" }}>ניכויים קבועים נוספים ₪</span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <span style={{ fontSize: 13, color: "#7c8896", fontFamily: "Rubik, sans-serif", display: "block" }}>ניכויים קבועים נוספים ₪</span>
               <span style={{ fontSize: 11, color: "#5c6776", fontFamily: "Rubik, sans-serif", display: "block", marginTop: 4, lineHeight: 1.5 }}>
                 למשל דמי טיפול/ועד — סכום קבוע שיורד כל חודש בלי קשר לשעות
               </span>
             </div>
-            <input type="text" inputMode="decimal" value={otherDeductions} onChange={(e) => setOtherDeductions(e.target.value)} required style={{ ...numberInput, flexShrink: 0, width: 70 }} />
+            <input type="text" inputMode="decimal" value={otherDeductions} onChange={(e) => setOtherDeductions(e.target.value)} required style={fixedNumberInput} />
+          </div>
+
+          <div style={pillRow}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <span style={{ fontSize: 13, color: "#7c8896", fontFamily: "Rubik, sans-serif", display: "block" }}>בסיס לקרן השתלמות ₪</span>
+              <span style={{ fontSize: 11, color: "#5c6776", fontFamily: "Rubik, sans-serif", display: "block", marginTop: 4, lineHeight: 1.5 }}>
+                שכר קובע קבוע מהתלוש שלך (לא תלוי בשעות בפועל) — הניכוי הוא 2.5% ממנו
+              </span>
+            </div>
+            <input type="text" inputMode="decimal" value={studyFundBase} onChange={(e) => setStudyFundBase(e.target.value)} required style={fixedNumberInput} />
           </div>
 
           <label style={{ ...pillRow, cursor: "pointer", alignItems: "flex-start" }}>

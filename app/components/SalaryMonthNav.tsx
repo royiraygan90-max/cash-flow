@@ -65,6 +65,7 @@ export default function SalaryMonthNav({ month, year, profile, currentRegularHou
             monthlyBonus: profile.monthlyBonus,
             travelAllowance: profile.travelAllowance,
             otherDeductions: profile.otherDeductions,
+            studyFundBase: profile.studyFundBase,
             currentRegularHours,
             currentShabbatHours,
           }}

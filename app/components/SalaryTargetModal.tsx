@@ -11,6 +11,7 @@ export interface SalaryTargetDefaults {
   monthlyBonus: number;
   travelAllowance: number;
   otherDeductions: number;
+  studyFundBase: number;
   currentRegularHours?: number;
   currentShabbatHours?: number;
 }
@@ -61,8 +62,9 @@ export default function SalaryTargetModal({ defaults, onClose }: Props) {
       monthlyBonus: includeBonus ? defaults.monthlyBonus : 0,
       travelAllowance: includeTravel ? defaults.travelAllowance : 0,
       otherDeductions: defaults.otherDeductions,
+      studyFundBase: defaults.studyFundBase,
     });
-  }, [targetNet, shabbatSharePct, regularRate, shabbatRate, includeBonus, includeTravel, defaults.monthlyBonus, defaults.travelAllowance, defaults.otherDeductions]);
+  }, [targetNet, shabbatSharePct, regularRate, shabbatRate, includeBonus, includeTravel, defaults.monthlyBonus, defaults.travelAllowance, defaults.otherDeductions, defaults.studyFundBase]);
 
   const weeklyAvgHours = result.totalHours / 4.33;
 

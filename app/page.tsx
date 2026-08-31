@@ -60,6 +60,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
     monthlyBonus: user.monthlyBonus,
     travelAllowance: user.travelAllowance,
     otherDeductions: user.otherDeductions,
+    studyFundBase: user.studyFundBase,
   };
   const salary            = computeSalary(monthShifts, salaryProfile, referralCount);
   const salaryTransactions = currentTransactions.filter((t) => t.type === "income" && t.category === "משכורת");
