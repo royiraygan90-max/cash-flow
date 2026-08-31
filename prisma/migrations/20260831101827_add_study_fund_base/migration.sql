@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "User" ADD COLUMN     "studyFundBase" DOUBLE PRECISION NOT NULL DEFAULT 6738;

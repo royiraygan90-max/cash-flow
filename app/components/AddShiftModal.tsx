@@ -470,7 +470,7 @@ export default function AddShiftModal({ onClose, editShift, profile, otherShifts
                     { label: "ביטוח לאומי ובריאות", value: previewBreakdown.bituachLeumiHealth },
                     { label: "פנסיה", value: previewBreakdown.pension },
                     { label: "קרן השתלמות", value: previewBreakdown.studyFund },
-                  ].map((row) => (
+                  ].filter((row) => row.value !== 0).map((row) => (
                     <div key={row.label} style={{ display: "flex", justifyContent: "space-between", fontSize: 13, fontFamily: "Rubik, sans-serif" }}>
                       <span style={{ color: "#9aa6b4" }}>{row.label}</span>
                       <span style={{ color: "#ff8f8f", direction: "ltr" }}>−₪{row.value.toLocaleString("he-IL")}</span>
