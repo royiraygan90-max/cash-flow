@@ -139,7 +139,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
 
       <SixMonthBarChart data={barData} />
 
-      <CategoryBreakdown data={pieData} budgets={budgets} />
+      <CategoryBreakdown data={pieData} budgets={budgets} transactions={serializedTransactions} />
 
       {(tradingExpense > 0 || tradingIncome > 0) && (
         <TradingPnlCard expense={tradingExpense} income={tradingIncome} />

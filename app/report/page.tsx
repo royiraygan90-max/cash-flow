@@ -75,6 +75,12 @@ export default async function ReportPage({ searchParams }: PageProps) {
   }
   const pieData = Object.entries(expenseByCategory).map(([name, value]) => ({ name, value }));
 
+  const serializedYearTxs = yearTxs.map((t) => ({
+    ...t,
+    date: t.date.toISOString(),
+    createdAt: t.createdAt.toISOString(),
+  }));
+
   const prevYearStart = new Date(year - 1, 0, 1);
   const prevYearEnd = new Date(year, 0, 1);
   const prevYearTxs = await prisma.transaction.findMany({ where: { userId: user.id, date: { gte: prevYearStart, lt: prevYearEnd } } });
@@ -142,7 +148,7 @@ export default async function ReportPage({ searchParams }: PageProps) {
             ]}
           />
           <IncomeBySourceCard sources={incomeSources} />
-          <CategoryBreakdown data={pieData} />
+          <CategoryBreakdown data={pieData} transactions={serializedYearTxs} />
         </>
       )}
     </main>

@@ -4,16 +4,28 @@ import { useState } from "react";
 import { CATEGORY_COLORS, DEFAULT_CATEGORY_COLOR } from "@/lib/categoryColors";
 import Icon from "./Icon";
 import CategoryBudgetsModal from "./CategoryBudgetsModal";
+import CategoryTransactionsModal from "./CategoryTransactionsModal";
 
 interface CategoryData {
   name: string;
   value: number;
 }
 
+interface Transaction {
+  id: string;
+  date: string;
+  type: string;
+  category: string;
+  description: string;
+  amount: number;
+}
+
 interface Props {
   data: CategoryData[];
   /** Monthly budget per category. Omit for aggregations that aren't a single month (e.g. the yearly report), where a monthly budget wouldn't be a meaningful comparison — the edit control is hidden too in that case. */
   budgets?: Record<string, number>;
+  /** Transactions covering the same period as `data`, used to list a category's expenses when its row is tapped. Omit to disable that interaction. */
+  transactions?: Transaction[];
 }
 
 const OVER_BUDGET_COLOR = "#ff6b6b";
@@ -22,8 +34,9 @@ function fmt(n: number): string {
   return Math.round(n).toLocaleString("he-IL");
 }
 
-export default function CategoryBreakdown({ data, budgets }: Props) {
+export default function CategoryBreakdown({ data, budgets, transactions }: Props) {
   const [budgetsOpen, setBudgetsOpen] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const editable = budgets !== undefined;
 
   if (data.length === 0) return null;
@@ -42,6 +55,14 @@ export default function CategoryBreakdown({ data, budgets }: Props) {
       }}
     >
       {budgetsOpen && <CategoryBudgetsModal budgets={budgets ?? {}} onClose={() => setBudgetsOpen(false)} />}
+
+      {selectedCategory && (
+        <CategoryTransactionsModal
+          category={selectedCategory}
+          transactions={(transactions ?? []).filter((t) => t.category === selectedCategory && t.type === "expense")}
+          onClose={() => setSelectedCategory(null)}
+        />
+      )}
 
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
         <p style={{ fontSize: 13, fontWeight: 600, color: "#f2f5f8", fontFamily: "Rubik, sans-serif" }}>
@@ -89,7 +110,10 @@ export default function CategoryBreakdown({ data, budgets }: Props) {
                 }}
               >
                 {/* Icon chip */}
-                <div
+                <button
+                  onClick={() => transactions && setSelectedCategory(name)}
+                  aria-label={`הצג הוצאות בקטגוריית ${name}`}
+                  disabled={!transactions}
                   style={{
                     width: 36,
                     height: 36,
@@ -100,10 +124,13 @@ export default function CategoryBreakdown({ data, budgets }: Props) {
                     alignItems: "center",
                     justifyContent: "center",
                     flexShrink: 0,
+                    border: "none",
+                    padding: 0,
+                    cursor: transactions ? "pointer" : "default",
                   }}
                 >
                   <Icon name={c.icon} size={18} />
-                </div>
+                </button>
 
                 {/* Category name */}
                 <span
