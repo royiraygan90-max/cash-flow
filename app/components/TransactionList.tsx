@@ -171,6 +171,7 @@ function TransactionRow({ tx }: { tx: Transaction }) {
 }
 
 type TypeFilter = "all" | "income" | "expense";
+type SortOption = "date" | "amount";
 
 const FILTER_SEGMENTS: { label: string; value: TypeFilter }[] = [
   { label: "הכל",     value: "all"     },
@@ -181,6 +182,7 @@ const FILTER_SEGMENTS: { label: string; value: TypeFilter }[] = [
 export default function TransactionList({ transactions }: Props) {
   const [query, setQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
+  const [sortBy, setSortBy] = useState<SortOption>("date");
 
   // Month is empty — preserve original empty state exactly
   if (transactions.length === 0) {
@@ -212,6 +214,12 @@ export default function TransactionList({ transactions }: Props) {
     );
   });
 
+  // Sorting by amount ranks the whole month at a glance, so it doesn't make
+  // sense to also split it into weekly buckets — only the date sort does that.
+  const sortedByAmount = sortBy === "amount"
+    ? [...filtered].sort((a, b) => b.amount - a.amount)
+    : filtered;
+
   const grouped: Record<string, Transaction[]> = {};
   for (const tx of filtered) {
     const week = getWeekLabel(tx.date);
@@ -221,35 +229,58 @@ export default function TransactionList({ transactions }: Props) {
 
   return (
     <div>
-      {/* ── Header: title + count ── */}
+      {/* ── Header: title + count + sort toggle ── */}
       <div
         style={{
           display: "flex",
           alignItems: "center",
-          gap: 6,
+          justifyContent: "space-between",
           direction: "rtl",
           marginBottom: 10,
         }}
       >
-        <span
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <span
+            style={{
+              fontSize: 15,
+              fontWeight: 600,
+              color: "#f2f5f8",
+              fontFamily: "Rubik, sans-serif",
+            }}
+          >
+            עסקאות החודש
+          </span>
+          <span
+            style={{
+              fontSize: 12,
+              color: "#6b7785",
+              fontFamily: "Rubik, sans-serif",
+            }}
+          >
+            ({transactions.length})
+          </span>
+        </div>
+
+        <button
+          onClick={() => setSortBy((s) => (s === "date" ? "amount" : "date"))}
+          aria-label={sortBy === "date" ? "מיין לפי סכום, מהיקר לזול" : "מיין לפי תאריך"}
           style={{
-            fontSize: 15,
-            fontWeight: 600,
-            color: "#f2f5f8",
-            fontFamily: "Rubik, sans-serif",
-          }}
-        >
-          עסקאות החודש
-        </span>
-        <span
-          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 4,
+            background: "#11151b",
+            border: "1px solid #1b212a",
+            borderRadius: 12,
+            padding: "6px 10px",
+            color: "#9aa6b4",
             fontSize: 12,
-            color: "#6b7785",
             fontFamily: "Rubik, sans-serif",
+            cursor: "pointer",
           }}
         >
-          ({transactions.length})
-        </span>
+          <Icon name="swap_vert" size={15} />
+          {sortBy === "date" ? "לפי תאריך" : "לפי סכום"}
+        </button>
       </div>
 
       {/* ── Search input ── */}
@@ -342,6 +373,17 @@ export default function TransactionList({ transactions }: Props) {
           }}
         >
           לא נמצאו עסקאות התואמות לחיפוש
+        </div>
+      ) : sortBy === "amount" ? (
+        <div
+          style={{
+            background: "#1b2230",
+            border: "1px solid #20272f",
+            borderRadius: 20,
+            overflow: "hidden",
+          }}
+        >
+          {sortedByAmount.map((tx) => <TransactionRow key={tx.id} tx={tx} />)}
         </div>
       ) : (
         <div
