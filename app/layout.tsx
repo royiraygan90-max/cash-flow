@@ -17,11 +17,19 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
+  maximumScale: 1,
+  userScalable: false,
+  themeColor: "#0d1014",
 };
 
 export const metadata: Metadata = {
   title: "מאזן חודשי",
   description: "מעקב תזרים מזומנים אישי",
+  appleWebApp: {
+    capable: true,
+    title: "מאזן חודשי",
+    statusBarStyle: "default",
+  },
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
