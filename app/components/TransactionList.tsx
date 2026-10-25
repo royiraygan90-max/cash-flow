@@ -13,6 +13,7 @@ interface Transaction {
   category: string;
   description: string;
   amount: number;
+  source?: string | null;
 }
 
 interface Props {
@@ -101,6 +102,24 @@ function TransactionRow({ tx }: { tx: Transaction }) {
               whiteSpace: "nowrap",
             }}
           >
+            {tx.source === "home-hub" && (
+            <span
+              style={{
+                fontSize: 10,
+                fontWeight: 500,
+                color: "#34e0a1",
+                background: "#34e0a122",
+                border: "1px solid #34e0a144",
+                borderRadius: 6,
+                padding: "1px 6px",
+                marginInlineEnd: 6,
+                fontFamily: "Rubik, sans-serif",
+                verticalAlign: "middle",
+              }}
+            >
+              מהבית
+            </span>
+            )}
             {tx.description || tx.category}
           </p>
           <p style={{ fontSize: 11, color: "#6b7785", fontFamily: "Rubik, sans-serif", marginTop: 2 }}>
