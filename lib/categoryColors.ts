@@ -19,6 +19,8 @@ export const CATEGORY_COLORS: Record<string, CategoryColor> = {
   מסחר:   { bg: "#22d3ee22", color: "#22d3ee", border: "#22d3ee44", icon: "candlestick_chart" },
   // Food
   מזון:    { bg: "#a78bfa22", color: "#a78bfa", border: "#a78bfa44", icon: "restaurant" },
+  // Shopping
+  קניות:   { bg: "#fb923c22", color: "#fb923c", border: "#fb923c44", icon: "shopping_basket" },
   // Entertainment
   בילויים: { bg: "#f472b622", color: "#f472b6", border: "#f472b644", icon: "celebration" },
   // Transport
