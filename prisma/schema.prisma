@@ -38,9 +38,15 @@ model Transaction {
   amount      Float
   createdAt   DateTime @default(now())
 
+  // Set for rows that arrive from another app (e.g. source "home-hub",
+  // externalId = that app's expense id), so a re-send updates the same row.
+  source     String?
+  externalId String?
+
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@unique([userId, source, externalId])
   @@index([userId])
 }
 
