@@ -77,9 +77,15 @@ model Shift {
   shabbatHours Float
   createdAt    DateTime @default(now())
 
+  // Set for shifts that arrive from another app (e.g. source "home-hub",
+  // externalId = that app's event id + day), so a re-send updates the same row.
+  source     String?
+  externalId String?
+
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@unique([userId, source, externalId])
   @@index([userId])
 }
 

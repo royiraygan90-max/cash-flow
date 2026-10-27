@@ -31,9 +31,16 @@ Environment variables:
 - `HOME_HUB_SYNC_KEY` — shared secret, sent by home-hub as `Authorization: Bearer <key>`. Without it the endpoint rejects everything.
 - `HOME_HUB_SYNC_USER` — the name of the user the expenses belong to. Optional while there is exactly one user.
 
-Request body: `{ upserts: [{ externalId, date: "yyyy-mm-dd", category, description, amount }], deletes: [externalId], dedupe?: boolean }`.
+Request body: `{ upserts: [{ externalId, date: "yyyy-mm-dd", category, description, amount }], deletes: [externalId], dedupe?: boolean, shifts?: { from, to, items } }`.
 With `dedupe: true` (used for the one-time import) an expense is skipped, and reported back, if a transaction entered
 by hand already exists on the same day with the same amount.
+
+Work shifts come the same way, from home-hub's calendar. `shifts` is a whole window of days
+(`from` inclusive, `to` exclusive) with every shift home-hub has in it: `{ externalId, date, startTime: "HH:MM", endTime: "HH:MM" }`.
+The window is reconciled: shifts are created or updated (hours, Shabbat hours and pay are worked out here, exactly as for a shift
+added by hand), and synced shifts in the window that are no longer listed are removed. Shifts entered by hand are never touched,
+and a listed shift with the same day and hours as one entered by hand is skipped and reported, not counted twice. They show a
+"מהבית" badge in the shift list.
 
 ## API Endpoints
 

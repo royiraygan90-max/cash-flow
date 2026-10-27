@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { applySync, hasValidSyncKey, parseSyncRequest, resolveSyncUser } from "@/lib/homeHubSync";
+import { applyShiftWindow, applySync, hasValidSyncKey, parseSyncRequest, resolveSyncUser } from "@/lib/homeHubSync";
 
 /**
- * Receives the shared-household expenses from home-hub (already reduced to this
- * user's share). Authenticated with a shared key rather than the session cookie,
+ * Receives from home-hub the shared-household expenses (already reduced to this
+ * user's share) and this user's work shifts from the calendar. Authenticated with a shared key rather than the session cookie,
  * since the caller is another server.
  */
 export async function POST(req: NextRequest) {
@@ -16,7 +16,9 @@ export async function POST(req: NextRequest) {
 
   try {
     const user = await resolveSyncUser();
-    return NextResponse.json(await applySync(user.id, body));
+    const expenses = await applySync(user.id, body);
+    const shifts = body.shifts ? await applyShiftWindow(user.id, body.shifts) : null;
+    return NextResponse.json({ ...expenses, shifts });
   } catch (err) {
     console.error("[home-hub sync] failed:", err);
     return NextResponse.json({ error: "Sync failed" }, { status: 500 });

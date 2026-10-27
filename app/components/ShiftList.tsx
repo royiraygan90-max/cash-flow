@@ -17,6 +17,7 @@ interface Shift {
   regularHours: number;
   shabbatHours: number;
   createdAt: string;
+  source?: string | null;
 }
 
 interface Props {
@@ -98,6 +99,24 @@ function ShiftRow({ shift, profile, otherShifts, referralCount }: { shift: Shift
           {overnight && (
             <span style={{ color: "#6b7785", display: "flex", flexShrink: 0 }}>
               <Icon name="dark_mode" size={14} />
+            </span>
+          )}
+          {shift.source === "home-hub" && (
+            <span
+              style={{
+                fontSize: 10,
+                fontWeight: 500,
+                color: "#34e0a1",
+                background: "#34e0a122",
+                border: "1px solid #34e0a144",
+                borderRadius: 6,
+                padding: "1px 6px",
+                fontFamily: "Rubik, sans-serif",
+                whiteSpace: "nowrap",
+                flexShrink: 0,
+              }}
+            >
+              מהבית
             </span>
           )}
         </div>
