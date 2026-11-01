@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { CATEGORY_COLORS, DEFAULT_CATEGORY_COLOR } from "@/lib/categoryColors";
 import Icon from "@/app/components/Icon";
-import { getSubValidityStatus } from "@/lib/subscriptionRange";
+import { getSubValidityStatus, isSubscriptionInRange } from "@/lib/subscriptionRange";
 import { HEBREW_MONTHS_FULL } from "@/lib/hebrewDates";
 
 interface Subscription {
@@ -190,6 +190,7 @@ export default function SubscriptionsPage() {
   const [form, setForm] = useState<FormData>(DEFAULT_FORM);
   const [saving, setSaving] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [showEnded, setShowEnded] = useState(false);
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
@@ -277,8 +278,15 @@ export default function SubscriptionsPage() {
     load();
   }
 
-  const activeTotal   = subscriptions.filter((s) => s.isActive).reduce((sum, s) => sum + s.amount, 0);
-  const yearlyTotal   = activeTotal * 12;
+  // Subscriptions whose payments are over no longer count toward totals and
+  // are tucked away in their own section instead of the main list.
+  const now = new Date();
+  const currentSubs = subscriptions.filter((s) => getSubValidityStatus(s, now).kind !== "ended");
+  const endedSubs   = subscriptions.filter((s) => getSubValidityStatus(s, now).kind === "ended");
+  const activeTotal = currentSubs
+    .filter((s) => s.isActive && isSubscriptionInRange(s, now.getFullYear(), now.getMonth()))
+    .reduce((sum, s) => sum + s.amount, 0);
+  const yearlyTotal = activeTotal * 12;
 
   const pillRow: React.CSSProperties = {
     background: "#11151b",
@@ -360,7 +368,7 @@ export default function SubscriptionsPage() {
           }}
         >
           <span style={{ fontSize: 13, fontWeight: 600, color: "#f2f5f8", fontFamily: "Rubik, sans-serif" }}>
-            מנויים ({subscriptions.length})
+            מנויים ({currentSubs.length})
           </span>
           <button
             onClick={openAdd}
@@ -385,7 +393,7 @@ export default function SubscriptionsPage() {
             אין מנויים עדיין
           </div>
         ) : (
-          subscriptions.map((sub) => (
+          currentSubs.map((sub) => (
             <SubscriptionRow
               key={sub.id}
               sub={sub}
@@ -396,6 +404,51 @@ export default function SubscriptionsPage() {
           ))
         )}
       </div>
+
+      {/* Ended subscriptions (collapsed) */}
+      {endedSubs.length > 0 && (
+        <div
+          style={{
+            background: "#1b2230",
+            border: "1px solid #20272f",
+            borderRadius: 20,
+            overflow: "hidden",
+            marginBottom: 12,
+          }}
+        >
+          <button
+            onClick={() => setShowEnded((v) => !v)}
+            style={{
+              width: "100%",
+              padding: "14px 16px",
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              direction: "rtl",
+              color: "#7c8896",
+              fontSize: 13,
+              fontWeight: 600,
+              fontFamily: "Rubik, sans-serif",
+            }}
+          >
+            <span>{`הסתיימו (${endedSubs.length})`}</span>
+            <span>{showEnded ? "▲" : "▼"}</span>
+          </button>
+          {showEnded &&
+            endedSubs.map((sub) => (
+              <SubscriptionRow
+                key={sub.id}
+                sub={sub}
+                onEdit={() => openEdit(sub)}
+                onDelete={() => handleDelete(sub.id)}
+                onToggle={() => handleToggle(sub)}
+              />
+            ))}
+        </div>
+      )}
 
       {/* Add / Edit modal */}
       {modal.open && (
