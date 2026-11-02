@@ -103,6 +103,8 @@ export async function applySms(userId: string, req: SmsRequest, now: Date = new 
       source: SMS_SOURCE,
       externalId,
       needsReview,
+      // Filed by a rule without the user seeing it: tell them on the dashboard
+      unseen: !needsReview,
     },
   });
 
