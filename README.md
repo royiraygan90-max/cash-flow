@@ -64,9 +64,6 @@ amount (empty = any amount), category and note. An exact-amount rule outranks an
 files the charges waiting for review that match it; charges already filed are never touched. When filing a waiting charge, "זכור לפעם הבאה" can
 save the rule for the same amount or for any amount from that merchant. API: `POST /api/merchant-rules`, `PUT`/`DELETE /api/merchant-rules/:id`.
 
-The dashboard also has a "הדבק הודעת אשראי" box: paste the SMS there and it goes through the same parsing and rules
-(`POST /api/sms/paste`, session cookie), for when the phone automation is not available.
-
 Each request to the phone endpoint logs one line (`[sms sync] POST bytes=… type=… agent=… auth=ok|bad`) and its result, never the message text, so
 Railway's deploy logs show whether a request arrived and what it got.
 

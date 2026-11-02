@@ -27,18 +27,16 @@ const navBtn: React.CSSProperties = {
   transition: "color 0.15s, background 0.15s",
 };
 
-const utilityPill: React.CSSProperties = {
+const utilityButton: React.CSSProperties = {
   background: "#161b22",
   border: "1px solid #1f2630",
   borderRadius: 99,
-  padding: "7px 14px",
+  width: 40,
+  height: 40,
   display: "flex",
   alignItems: "center",
-  gap: 6,
+  justifyContent: "center",
   color: "#9aa6b4",
-  fontSize: 12,
-  fontFamily: "Rubik, sans-serif",
-  fontWeight: 500,
   cursor: "pointer",
   transition: "color 0.15s",
 };
@@ -89,56 +87,34 @@ export default function MonthNavigator({ month, year }: Props) {
         </button>
       </div>
 
-      {/* Row 2 — utility pills */}
+      {/* Row 2 — shortcuts, icons only (the label is for screen readers and the hover tooltip) */}
       <div
         style={{
           display: "flex",
-          gap: 8,
+          gap: 10,
           justifyContent: "flex-start",
-          flexWrap: "wrap",
           marginBottom: 12,
           padding: "0 2px",
         }}
       >
-        <button
-          onClick={() => router.push("/shifts")}
-          style={utilityPill}
-          onMouseEnter={(e) => (e.currentTarget.style.color = "#f2f5f8")}
-          onMouseLeave={(e) => (e.currentTarget.style.color = "#9aa6b4")}
-        >
-          <Icon name="schedule" size={14} />
-          שעות עבודה
-        </button>
-
-        <button
-          onClick={() => router.push("/report")}
-          style={utilityPill}
-          onMouseEnter={(e) => (e.currentTarget.style.color = "#f2f5f8")}
-          onMouseLeave={(e) => (e.currentTarget.style.color = "#9aa6b4")}
-        >
-          <Icon name="summarize" size={14} />
-          דוח שנתי
-        </button>
-
-        <button
-          onClick={() => window.open("/api/export", "_blank")}
-          style={utilityPill}
-          onMouseEnter={(e) => (e.currentTarget.style.color = "#f2f5f8")}
-          onMouseLeave={(e) => (e.currentTarget.style.color = "#9aa6b4")}
-        >
-          <Icon name="download" size={14} />
-          ייצוא CSV
-        </button>
-
-        <button
-          onClick={() => router.push("/rules")}
-          style={utilityPill}
-          onMouseEnter={(e) => (e.currentTarget.style.color = "#f2f5f8")}
-          onMouseLeave={(e) => (e.currentTarget.style.color = "#9aa6b4")}
-        >
-          <Icon name="rule" size={14} />
-          כללי סיווג
-        </button>
+        {[
+          { icon: "schedule", label: "שעות עבודה", onClick: () => router.push("/shifts") },
+          { icon: "summarize", label: "דוח שנתי", onClick: () => router.push("/report") },
+          { icon: "rule", label: "כללי סיווג", onClick: () => router.push("/rules") },
+          { icon: "download", label: "ייצוא CSV", onClick: () => window.open("/api/export", "_blank") },
+        ].map((item) => (
+          <button
+            key={item.icon}
+            onClick={item.onClick}
+            aria-label={item.label}
+            title={item.label}
+            style={utilityButton}
+            onMouseEnter={(e) => (e.currentTarget.style.color = "#f2f5f8")}
+            onMouseLeave={(e) => (e.currentTarget.style.color = "#9aa6b4")}
+          >
+            <Icon name={item.icon} size={20} />
+          </button>
+        ))}
       </div>
     </div>
   );
