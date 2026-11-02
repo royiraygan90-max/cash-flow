@@ -27,6 +27,7 @@ model User {
   shifts          Shift[]
   salarySettings  SalarySettings[]
   categoryBudgets CategoryBudget[]
+  merchantRules   MerchantRule[]
 }
 
 model Transaction {
@@ -42,6 +43,10 @@ model Transaction {
   // externalId = that app's expense id), so a re-send updates the same row.
   source     String?
   externalId String?
+
+  // A charge that arrived from an SMS no rule recognised: it counts in the totals
+  // (as "אחר") but waits on the dashboard for the user to pick a category and a note.
+  needsReview Boolean @default(false)
 
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -110,4 +115,22 @@ model CategoryBudget {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, category])
+}
+
+/// "Charges from this merchant, for this amount, are this category with this note" —
+/// applied to card-charge SMS so a recurring expense lands without a review.
+model MerchantRule {
+  id        String   @id @default(cuid())
+  /// The merchant name as it appears in the SMS, trimmed and lower-cased
+  merchant  String
+  /// Null means any amount at this merchant
+  amount    Float?
+  category  String
+  note      String   @default("")
+  createdAt DateTime @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, merchant])
 }

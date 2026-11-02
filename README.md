@@ -50,13 +50,17 @@ expense (`source = "sms"`, shown with an "אשראי" badge). Setup steps for th
 Environment variables: `SMS_SYNC_KEY` — shared secret, sent as `Authorization: Bearer <key>`. Without it the endpoint rejects
 everything. `SMS_SYNC_USER` — the name of the user the expenses belong to (falls back to `HOME_HUB_SYNC_USER`). Required when there is more than one user.
 
+A charge no rule recognises shows in a card on the dashboard ("מחכים לסיווג"): pick a category, add a note, and optionally
+tick "remember" to save a rule (same merchant and same amount) so the next identical charge is filed straight away.
+It counts in the totals as "אחר" until then. Rules are stored in `MerchantRule`; a rule without an amount matches any amount at that merchant.
+
 Request body: `{ text, receivedAt? }` — `text` is the raw message, parsed here so a change in wording is fixed on the server, not on the phone.
 `receivedAt` is any string that differs per message (the Shortcut sends the message's date and time); it lets two identical
 purchases on one day stay apart, while re-sending the same message never duplicates.
 
 | Status | Body | Meaning |
 |--------|------|---------|
-| 201 | `{ status: "created", id, date, amount, description, category, categorySource }` | Added. The category is the one used before for that merchant (`history`), else a keyword guess (`keywords`), else "אחר" (`default`) |
+| 201 | `{ status: "created", id, date, amount, description, category, needsReview }` | Added. If a rule matches the merchant (+ amount), it is filed with the rule's category and note. Otherwise it is added as "אחר" with `needsReview: true` and waits on the dashboard |
 | 200 | `{ status: "duplicate", id }` | This message was already added; nothing changes |
 | 200 | `{ status: "duplicate-of-manual", existing }` | An expense entered by hand on the same day for the same amount exists; skipped |
 | 422 | `{ status: "unparsed", reason }` | Not a plain shekel purchase (`refund-or-cancellation`, `unsupported-currency:USD`, `unrecognized-format`, ...); enter it by hand |

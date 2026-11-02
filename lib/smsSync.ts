@@ -1,21 +1,12 @@
 import { createHash } from "crypto";
 import { prisma } from "@/lib/prisma";
-import { guessCategoryFromKeywords } from "@/lib/merchantCategory";
+import { findRule } from "@/lib/merchantRules";
 import { parseCardSms, type ParsedSms } from "@/lib/smsParse";
 
 export const SMS_SOURCE = "sms";
 const MAX_TEXT = 2000;
-const FALLBACK_CATEGORY = "אחר";
-
-/** What the user filed this merchant under before, if anything — their own choice outranks keyword guesses. */
-async function categoryUsedBefore(userId: string, merchant: string): Promise<string | null> {
-  const previous = await prisma.transaction.findFirst({
-    where: { userId, type: "expense", description: { equals: merchant, mode: "insensitive" } },
-    orderBy: { createdAt: "desc" },
-    select: { category: true },
-  });
-  return previous?.category ?? null;
-}
+/** Where a charge sits in the totals until the user has chosen its category. */
+export const UNREVIEWED_CATEGORY = "אחר";
 
 /**
  * The SMS has no transaction id, so identify it by what it says plus when it arrived.
@@ -40,7 +31,7 @@ export function parseSmsRequest(body: unknown): SmsRequest | null {
 }
 
 export type SmsOutcome =
-  | { status: "created"; id: string; date: string; amount: number; description: string; category: string; categorySource: "history" | "keywords" | "default" }
+  | { status: "created"; id: string; date: string; amount: number; description: string; category: string; needsReview: boolean }
   | { status: "duplicate"; id: string }
   | { status: "duplicate-of-manual"; existing: { id: string; category: string; description: string } }
   | { status: "unparsed"; reason: string };
@@ -65,30 +56,26 @@ export async function applySms(userId: string, req: SmsRequest, now: Date = new 
   });
   if (entered) return { status: "duplicate-of-manual", existing: entered };
 
-  const remembered = await categoryUsedBefore(userId, sms.merchant);
-  const guessed = remembered ? null : guessCategoryFromKeywords(sms.merchant);
-  const category = remembered ?? guessed ?? FALLBACK_CATEGORY;
+  // A rule for this merchant (and amount) files it straight away; anything else waits for the user
+  const rule = await findRule(userId, sms.merchant, sms.amount);
+  const description = (rule?.note.trim() || sms.merchant).slice(0, 200);
+  const category = rule?.category ?? UNREVIEWED_CATEGORY;
+  const needsReview = rule === null;
 
   const created = await prisma.transaction.create({
     data: {
       date: dayStart,
       type: "expense",
       category,
-      description: sms.merchant.slice(0, 200),
+      // While it waits for review the description stays the merchant name, which is what the rule is made from
+      description,
       amount: sms.amount,
       userId,
       source: SMS_SOURCE,
       externalId,
+      needsReview,
     },
   });
 
-  return {
-    status: "created",
-    id: created.id,
-    date: sms.date,
-    amount: sms.amount,
-    description: created.description,
-    category,
-    categorySource: remembered ? "history" : guessed ? "keywords" : "default",
-  };
+  return { status: "created", id: created.id, date: sms.date, amount: sms.amount, description, category, needsReview };
 }
