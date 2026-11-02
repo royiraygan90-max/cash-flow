@@ -58,8 +58,22 @@ function isRealDay(year: number, month: number, day: number) {
   return d.getUTCFullYear() === year && d.getUTCMonth() === month - 1 && d.getUTCDate() === day;
 }
 
+const OPENING = "בכרטיסך המסתיים";
+
+/**
+ * An iOS automation can hand over the same message twice in a row, with nothing between
+ * them. Keep only the first one, or the merchant would swallow the second copy.
+ */
+function firstCopy(text: string): string {
+  const first = text.indexOf(OPENING);
+  const second = first === -1 ? -1 : text.indexOf(OPENING, first + OPENING.length);
+  if (second === -1) return text;
+  // A greeting ("שלום,") right before the second copy belongs to it, not to the first
+  return text.slice(0, second).replace(/\s*שלום,?\s*$/, "");
+}
+
 export function parseCardSms(text: string, now: Date = new Date()): SmsParseResult {
-  const clean = text.replace(INVISIBLE, "").replace(/\s+/g, " ").trim();
+  const clean = firstCopy(text.replace(INVISIBLE, "").replace(/\s+/g, " ").trim());
 
   if (/זיכוי|בוטל|ביטול עסקה/.test(clean)) return { ok: false, reason: "refund-or-cancellation" };
 
