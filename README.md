@@ -54,9 +54,10 @@ A charge no rule recognises shows in a card on the dashboard ("מחכים לסי
 tick "remember" to save a rule (same merchant and same amount) so the next identical charge is filed straight away.
 It counts in the totals as "אחר" until then. Rules are stored in `MerchantRule`; a rule without an amount matches any amount at that merchant.
 
-Request body: `{ text, receivedAt? }` — `text` is the raw message, parsed here so a change in wording is fixed on the server, not on the phone.
-`receivedAt` is any string that differs per message (the Shortcut sends the message's date and time); it lets two identical
-purchases on one day stay apart, while re-sending the same message never duplicates.
+Request body: the raw message text (what the Shortcut sends — `Content-Type` is ignored), or JSON `{ text, receivedAt? }`.
+The message is parsed here, so a change in wording is fixed on the server, not on the phone.
+The same message arriving again within 10 minutes is treated as a retry and never duplicates. With JSON, `receivedAt` (any string
+that differs per message) is used instead of the time window to tell two identical purchases apart.
 
 | Status | Body | Meaning |
 |--------|------|---------|
