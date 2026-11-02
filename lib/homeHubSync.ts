@@ -44,27 +44,31 @@ export type DuplicateReport = {
 
 const digest = (value: string) => createHash("sha256").update(value).digest();
 
-/** Constant-time check of "Authorization: Bearer <key>" against HOME_HUB_SYNC_KEY. */
-export function hasValidSyncKey(authorization: string | null): boolean {
-  const key = process.env.HOME_HUB_SYNC_KEY;
+/** Constant-time check of "Authorization: Bearer <key>" against `key`; an unset key rejects everything. */
+export function hasValidBearer(authorization: string | null, key: string | undefined): boolean {
   if (!key || !authorization?.startsWith("Bearer ")) return false;
   return timingSafeEqual(digest(authorization.slice("Bearer ".length)), digest(key));
+}
+
+/** Constant-time check of "Authorization: Bearer <key>" against HOME_HUB_SYNC_KEY. */
+export function hasValidSyncKey(authorization: string | null): boolean {
+  return hasValidBearer(authorization, process.env.HOME_HUB_SYNC_KEY);
 }
 
 /**
  * Who the synced expenses belong to: the user named in HOME_HUB_SYNC_USER, or
  * the only user there is. Anything ambiguous is an error rather than a guess.
  */
-export async function resolveSyncUser() {
-  const name = process.env.HOME_HUB_SYNC_USER?.trim();
+export async function resolveSyncUser(configuredName: string | undefined = process.env.HOME_HUB_SYNC_USER) {
+  const name = configuredName?.trim();
   if (name) {
     const matches = await prisma.user.findMany({ where: { name }, take: 2 });
     if (matches.length === 1) return matches[0];
-    throw new Error(`HOME_HUB_SYNC_USER "${name}" matches ${matches.length} users`);
+    throw new Error(`Sync user "${name}" matches ${matches.length} users`);
   }
   const users = await prisma.user.findMany({ take: 2 });
   if (users.length === 1) return users[0];
-  throw new Error("Set HOME_HUB_SYNC_USER: there is not exactly one user");
+  throw new Error("Set the sync user (HOME_HUB_SYNC_USER or SMS_SYNC_USER): there is not exactly one user");
 }
 
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
