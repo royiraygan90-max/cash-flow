@@ -15,7 +15,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const body = parseSmsRequest(await req.json().catch(() => null));
+  // The Shortcut sends the message as the plain body; JSON { text, receivedAt? } works too.
+  // An SMS never starts with "{", so that is enough to tell them apart.
+  const raw = await req.text().catch(() => "");
+  let payload: unknown = raw;
+  if (raw.trimStart().startsWith("{")) {
+    try {
+      payload = JSON.parse(raw);
+    } catch {
+      payload = null;
+    }
+  }
+  const body = parseSmsRequest(payload);
   if (!body) return NextResponse.json({ error: "Invalid request" }, { status: 400 });
 
   try {

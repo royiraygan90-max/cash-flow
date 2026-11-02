@@ -8,20 +8,37 @@ const MAX_TEXT = 2000;
 /** Where a charge sits in the totals until the user has chosen its category. */
 export const UNREVIEWED_CATEGORY = "אחר";
 
-/**
- * The SMS has no transaction id, so identify it by what it says plus when it arrived.
- * Re-sending the same message maps to the same row; two identical purchases on one day
- * stay apart because their messages arrived at different moments.
- */
-export function smsExternalId(parsed: ParsedSms, receivedAt: string | null): string {
-  const basis = [parsed.last4, parsed.date, parsed.amount.toFixed(2), parsed.merchant.toLowerCase(), receivedAt ?? ""].join("|");
+/** The same message re-sent within this long is the phone retrying, not a second purchase. */
+const RETRY_WINDOW_MS = 10 * 60 * 1000;
+
+/** What the message says, without when it arrived. */
+function smsFingerprint(parsed: ParsedSms): string {
+  const basis = [parsed.last4, parsed.date, parsed.amount.toFixed(2), parsed.merchant.toLowerCase()].join("|");
   return createHash("sha256").update(basis).digest("hex").slice(0, 32);
+}
+
+/**
+ * The SMS has no transaction id. When the phone sends `receivedAt`, the id is the message
+ * plus that moment: re-sending maps to the same row, and two identical purchases on one day
+ * stay apart. Without it, the id is the message plus the time it reached us, and a repeat
+ * within RETRY_WINDOW_MS is treated as a retry instead (see applySms).
+ */
+export function smsExternalId(parsed: ParsedSms, receivedAt: string | null, now: Date): string {
+  const fingerprint = smsFingerprint(parsed);
+  if (receivedAt === null) return `${fingerprint}:${now.getTime()}`;
+  return createHash("sha256").update(`${fingerprint}|${receivedAt}`).digest("hex").slice(0, 32);
 }
 
 export type SmsRequest = { text: string; receivedAt: string | null };
 
-/** Returns null when the body isn't a well-formed request. */
+/**
+ * Either the raw message text (what a Shortcut sends as a plain body), or JSON
+ * `{ text, receivedAt? }`. Returns null when it isn't a well-formed request.
+ */
 export function parseSmsRequest(body: unknown): SmsRequest | null {
+  if (typeof body === "string") {
+    return body.trim() && body.length <= MAX_TEXT ? { text: body, receivedAt: null } : null;
+  }
   if (!body || typeof body !== "object") return null;
   const { text, receivedAt } = body as Record<string, unknown>;
   if (typeof text !== "string" || !text.trim() || text.length > MAX_TEXT) return null;
@@ -41,7 +58,19 @@ export async function applySms(userId: string, req: SmsRequest, now: Date = new 
   if (!parsed.ok) return { status: "unparsed", reason: parsed.reason };
   const sms = parsed.value;
 
-  const externalId = smsExternalId(sms, req.receivedAt);
+  const externalId = smsExternalId(sms, req.receivedAt, now);
+  if (req.receivedAt === null) {
+    const retry = await prisma.transaction.findFirst({
+      where: {
+        userId,
+        source: SMS_SOURCE,
+        externalId: { startsWith: `${smsFingerprint(sms)}:` },
+        createdAt: { gte: new Date(now.getTime() - RETRY_WINDOW_MS) },
+      },
+      select: { id: true },
+    });
+    if (retry) return { status: "duplicate", id: retry.id };
+  }
   const key = { userId_source_externalId: { userId, source: SMS_SOURCE, externalId } };
 
   // Never overwrite: the user may have changed the category since the first time it arrived
