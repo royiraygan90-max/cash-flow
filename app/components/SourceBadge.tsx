@@ -1,5 +1,6 @@
 const BADGES: Record<string, { label: string; color: string }> = {
   "home-hub": { label: "מהבית", color: "#34e0a1" },
+  "home-hub-upcoming": { label: "צפוי", color: "#f5b942" },
   sms: { label: "אשראי", color: "#52b9ff" },
 };
 

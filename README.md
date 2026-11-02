@@ -35,6 +35,12 @@ Request body: `{ upserts: [{ externalId, date: "yyyy-mm-dd", category, descripti
 With `dedupe: true` (used for the one-time import) an expense is skipped, and reported back, if a transaction entered
 by hand already exists on the same day with the same amount.
 
+Request body also takes `upcoming: [{ externalId, date, category, description, amount }]`: the subscription charges home-hub still expects
+this month and hasn't booked yet (the rent on the 10th, seen on the 2nd). They are stored with `source = "home-hub-upcoming"` (shown with a
+"צפוי" badge) and count in the month right away. The list is the whole truth: listed ones are created or updated, and every other
+`home-hub-upcoming` row is removed, so a charge disappears from here the moment home-hub books the real one (which arrives as an ordinary
+`home-hub` expense), is paused, or is deleted. Omit `upcoming` to leave them alone.
+
 Work shifts come the same way, from home-hub's calendar. `shifts` is a whole window of days
 (`from` inclusive, `to` exclusive) with every shift home-hub has in it: `{ externalId, date, startTime: "HH:MM", endTime: "HH:MM" }`.
 The window is reconciled: shifts are created or updated (hours, Shabbat hours and pay are worked out here, exactly as for a shift
