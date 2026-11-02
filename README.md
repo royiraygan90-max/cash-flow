@@ -68,6 +68,10 @@ amount (empty = any amount), category and note. An exact-amount rule outranks an
 files the charges waiting for review that match it; charges already filed are never touched. When filing a waiting charge, "זכור לפעם הבאה" can
 save the rule for the same amount or for any amount from that merchant. API: `POST /api/merchant-rules`, `PUT`/`DELETE /api/merchant-rules/:id`.
 
+With `?format=text` the endpoint answers one plain Hebrew line instead of JSON (same status codes), e.g. `נוסף חיוב: תספורת · בריאות · ₪90`,
+`חיוב חדש מחכה לסיווג: …`, `ההודעה הזאת כבר נקלטה`, `לא נקלט: …`, so a Shortcut can show it as a notification with a single
+"Show Notification" action (`lib/smsReply.ts`).
+
 Each request to the phone endpoint logs one line (`[sms sync] POST bytes=… type=… agent=… auth=ok|bad`) and its result, never the message text, so
 Railway's deploy logs show whether a request arrived and what it got.
 
