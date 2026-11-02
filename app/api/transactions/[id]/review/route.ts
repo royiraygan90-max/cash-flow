@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireApiUser } from "@/lib/auth";
-import { normalizeMerchant, saveRule } from "@/lib/merchantRules";
+import { saveRule, settleWaiting } from "@/lib/merchantRules";
 
 /**
  * Settles a charge that came in from an SMS and is waiting for review: sets its category
@@ -17,6 +17,8 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const category = typeof body?.category === "string" ? body.category.trim().slice(0, 60) : "";
   const note = typeof body?.note === "string" ? body.note.trim().slice(0, 200) : "";
   const remember = body?.remember === true;
+  // By default the rule is for this exact amount; "any amount" covers every charge from the merchant
+  const anyAmount = body?.anyAmount === true;
   if (!category) return NextResponse.json({ error: "Missing category" }, { status: 400 });
 
   const tx = await prisma.transaction.findFirst({ where: { id: params.id, userId: user.id, needsReview: true } });
@@ -30,16 +32,9 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
   let alsoSettled = 0;
   if (remember) {
-    await saveRule(user.id, { merchant, amount: tx.amount, category, note });
-    const waiting = await prisma.transaction.findMany({
-      where: { userId: user.id, needsReview: true, amount: tx.amount, id: { not: tx.id } },
-      select: { id: true, description: true },
-    });
-    const same = waiting.filter((w) => normalizeMerchant(w.description) === normalizeMerchant(merchant)).map((w) => w.id);
-    if (same.length) {
-      await prisma.transaction.updateMany({ where: { id: { in: same } }, data: settle });
-      alsoSettled = same.length;
-    }
+    const rule = { merchant, amount: anyAmount ? null : tx.amount, category, note };
+    await saveRule(user.id, rule);
+    alsoSettled = await settleWaiting(user.id, rule);
   }
 
   return NextResponse.json({ success: true, alsoSettled });

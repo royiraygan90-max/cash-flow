@@ -95,6 +95,7 @@ export default function MonthNavigator({ month, year }: Props) {
           display: "flex",
           gap: 8,
           justifyContent: "flex-start",
+          flexWrap: "wrap",
           marginBottom: 12,
           padding: "0 2px",
         }}
@@ -127,6 +128,16 @@ export default function MonthNavigator({ month, year }: Props) {
         >
           <Icon name="download" size={14} />
           ייצוא CSV
+        </button>
+
+        <button
+          onClick={() => router.push("/rules")}
+          style={utilityPill}
+          onMouseEnter={(e) => (e.currentTarget.style.color = "#f2f5f8")}
+          onMouseLeave={(e) => (e.currentTarget.style.color = "#9aa6b4")}
+        >
+          <Icon name="rule" size={14} />
+          כללי סיווג
         </button>
       </div>
     </div>
