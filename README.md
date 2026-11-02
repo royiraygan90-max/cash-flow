@@ -59,6 +59,12 @@ The message is parsed here, so a change in wording is fixed on the server, not o
 The same message arriving again within 10 minutes is treated as a retry and never duplicates. With JSON, `receivedAt` (any string
 that differs per message) is used instead of the time window to tell two identical purchases apart.
 
+The dashboard also has a "הדבק הודעת אשראי" box: paste the SMS there and it goes through the same parsing and rules
+(`POST /api/sms/paste`, session cookie), for when the phone automation is not available.
+
+Each request to the phone endpoint logs one line (`[sms sync] POST bytes=… type=… agent=… auth=ok|bad`) and its result, never the message text, so
+Railway's deploy logs show whether a request arrived and what it got.
+
 | Status | Body | Meaning |
 |--------|------|---------|
 | 201 | `{ status: "created", id, date, amount, description, category, needsReview }` | Added. If a rule matches the merchant (+ amount), it is filed with the rule's category and note. Otherwise it is added as "אחר" with `needsReview: true` and waits on the dashboard |
