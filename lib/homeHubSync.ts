@@ -3,6 +3,12 @@ import { prisma } from "@/lib/prisma";
 import { splitShiftHours } from "@/lib/shiftCalc";
 
 export const HOME_HUB_SOURCE = "home-hub";
+/**
+ * Subscription charges that home-hub knows are coming this month but hasn't booked yet
+ * (the rent on the 10th, seen on the 2nd). They count in the month straight away, and
+ * are replaced by the real `home-hub` expense when the charge day arrives.
+ */
+export const HOME_HUB_UPCOMING_SOURCE = "home-hub-upcoming";
 const MAX_BATCH = 500;
 
 export type IncomingExpense = {
@@ -34,6 +40,8 @@ export type SyncRequest = {
   /** Backfill mode: don't create a row that looks like one already entered by hand */
   dedupe: boolean;
   shifts: ShiftWindow | null;
+  /** Every charge home-hub still expects this month; null = this request says nothing about them */
+  upcoming: IncomingExpense[] | null;
 };
 
 export type DuplicateReport = {
@@ -115,7 +123,7 @@ function parseShiftWindow(raw: unknown): ShiftWindow | null {
 /** Returns null when the body isn't a well-formed request. */
 export function parseSyncRequest(body: unknown): SyncRequest | null {
   if (!body || typeof body !== "object") return null;
-  const { upserts = [], deletes = [], dedupe = false, shifts = null } = body as Record<string, unknown>;
+  const { upserts = [], deletes = [], dedupe = false, shifts = null, upcoming = null } = body as Record<string, unknown>;
   if (!Array.isArray(upserts) || !Array.isArray(deletes)) return null;
   if (upserts.length + deletes.length > MAX_BATCH) return null;
 
@@ -126,7 +134,21 @@ export function parseSyncRequest(body: unknown): SyncRequest | null {
   const window = shifts === null ? null : parseShiftWindow(shifts);
   if (shifts !== null && window === null) return null;
 
-  return { upserts: parsed as IncomingExpense[], deletes: deletes as string[], dedupe: dedupe === true, shifts: window };
+  let expected: IncomingExpense[] | null = null;
+  if (upcoming !== null) {
+    if (!Array.isArray(upcoming) || upcoming.length > MAX_BATCH) return null;
+    const items = upcoming.map(parseExpense);
+    if (items.some((e) => e === null)) return null;
+    expected = items as IncomingExpense[];
+  }
+
+  return {
+    upserts: parsed as IncomingExpense[],
+    deletes: deletes as string[],
+    dedupe: dedupe === true,
+    shifts: window,
+    upcoming: expected,
+  };
 }
 
 /** Entered by hand (not synced) on the same day for the same amount. */
@@ -187,6 +209,47 @@ export async function applySync(userId: string, req: SyncRequest) {
     : { count: 0 };
 
   return { created, updated, deleted: removed.count, duplicates };
+}
+
+/**
+ * Makes the "expected" rows match `items` exactly: creates and updates the listed ones and
+ * removes the rest. They are only ever the current month's, so a row that is no longer
+ * listed (booked for real, paused, deleted, a new month) is stale by definition.
+ */
+export async function applyUpcoming(userId: string, items: IncomingExpense[]) {
+  let created = 0;
+  let updated = 0;
+
+  for (const e of items) {
+    const key = { userId_source_externalId: { userId, source: HOME_HUB_UPCOMING_SOURCE, externalId: e.externalId } };
+    const fields = { date: new Date(e.date), category: e.category, description: e.description, amount: e.amount };
+
+    const existing = await prisma.transaction.findUnique({ where: key });
+    if (!existing) {
+      await prisma.transaction.create({
+        data: { ...fields, type: "expense", userId, source: HOME_HUB_UPCOMING_SOURCE, externalId: e.externalId },
+      });
+      created++;
+    } else if (
+      existing.date.getTime() !== fields.date.getTime() ||
+      existing.category !== fields.category ||
+      existing.description !== fields.description ||
+      existing.amount !== fields.amount
+    ) {
+      await prisma.transaction.update({ where: key, data: fields });
+      updated++;
+    }
+  }
+
+  const removed = await prisma.transaction.deleteMany({
+    where: {
+      userId,
+      source: HOME_HUB_UPCOMING_SOURCE,
+      externalId: { notIn: items.map((e) => e.externalId) },
+    },
+  });
+
+  return { created, updated, deleted: removed.count };
 }
 
 export type ShiftLookalike = { externalId: string; date: string; startTime: string; endTime: string; existingId: string };
