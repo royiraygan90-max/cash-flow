@@ -59,6 +59,11 @@ The message is parsed here, so a change in wording is fixed on the server, not o
 The same message arriving again within 10 minutes is treated as a retry and never duplicates. With JSON, `receivedAt` (any string
 that differs per message) is used instead of the time window to tell two identical purchases apart.
 
+Rules are managed on the "כללי סיווג" screen (`/rules`, linked from the dashboard): add, edit and delete a rule — merchant, an optional
+amount (empty = any amount), category and note. An exact-amount rule outranks an any-amount one for the same merchant. A new or changed rule also
+files the charges waiting for review that match it; charges already filed are never touched. When filing a waiting charge, "זכור לפעם הבאה" can
+save the rule for the same amount or for any amount from that merchant. API: `POST /api/merchant-rules`, `PUT`/`DELETE /api/merchant-rules/:id`.
+
 The dashboard also has a "הדבק הודעת אשראי" box: paste the SMS there and it goes through the same parsing and rules
 (`POST /api/sms/paste`, session cookie), for when the phone automation is not available.
 

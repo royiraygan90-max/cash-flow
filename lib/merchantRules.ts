@@ -39,3 +39,45 @@ export async function saveRule(
     data: { userId, merchant, amount: rule.amount, category: rule.category, note: rule.note },
   });
 }
+
+/** Only the rule's own fields, checked: what a request to create or change a rule may carry. */
+export type RuleFields = { merchant: string; amount: number | null; category: string; note: string };
+
+/** Returns null when the body isn't a well-formed rule. An empty or missing amount means any amount. */
+export function parseRuleFields(body: unknown): RuleFields | null {
+  if (!body || typeof body !== "object") return null;
+  const b = body as Record<string, unknown>;
+  const merchant = typeof b.merchant === "string" ? normalizeMerchant(b.merchant).slice(0, 200) : "";
+  const category = typeof b.category === "string" ? b.category.trim().slice(0, 60) : "";
+  const note = typeof b.note === "string" ? b.note.trim().slice(0, 200) : "";
+  if (!merchant || !category) return null;
+
+  let amount: number | null = null;
+  if (b.amount !== null && b.amount !== undefined && b.amount !== "") {
+    amount = typeof b.amount === "number" ? b.amount : Number(b.amount);
+    if (!Number.isFinite(amount) || amount <= 0) return null;
+  }
+  return { merchant, amount, category, note };
+}
+
+/**
+ * Files the charges that are waiting for review and match this rule (same merchant, and the
+ * same amount unless the rule covers any amount). Charges already filed are left alone.
+ */
+export async function settleWaiting(userId: string, rule: RuleFields) {
+  const waiting = await prisma.transaction.findMany({
+    where: { userId, needsReview: true, ...(rule.amount === null ? {} : { amount: rule.amount }) },
+    select: { id: true, description: true, amount: true },
+  });
+  const merchant = normalizeMerchant(rule.merchant);
+  const matching = waiting.filter(
+    (w) => normalizeMerchant(w.description) === merchant && (rule.amount === null || sameAmount(w.amount, rule.amount)),
+  );
+  for (const w of matching) {
+    await prisma.transaction.update({
+      where: { id: w.id },
+      data: { category: rule.category, description: rule.note || w.description, needsReview: false },
+    });
+  }
+  return matching.length;
+}

@@ -29,6 +29,8 @@ function PendingRow({ charge }: { charge: PendingCharge }) {
   const [category, setCategory] = useState<string | null>(null);
   const [note, setNote] = useState("");
   const [remember, setRemember] = useState(true);
+  // The rule is for this exact amount by default; "any amount" fits a merchant that is always the same thing
+  const [anyAmount, setAnyAmount] = useState(false);
   const [busy, setBusy] = useState(false);
 
   async function save() {
@@ -38,7 +40,7 @@ function PendingRow({ charge }: { charge: PendingCharge }) {
       const res = await fetch(`/api/transactions/${charge.id}/review`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ category, note, remember }),
+        body: JSON.stringify({ category, note, remember, anyAmount }),
       });
       if (!res.ok) throw new Error("review failed");
       showToast({
@@ -136,8 +138,36 @@ function PendingRow({ charge }: { charge: PendingCharge }) {
 
           <label style={{ ...font, display: "flex", alignItems: "center", gap: 8, marginTop: 12, fontSize: 13, color: "#c9bfa6", cursor: "pointer" }}>
             <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
-            זכור לפעם הבאה (אותו בית עסק ואותו סכום)
+            זכור לפעם הבאה
           </label>
+
+          {remember && (
+            <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+              {[
+                { value: false, text: `אותו סכום (₪${charge.amount.toLocaleString("he-IL")})` },
+                { value: true, text: "כל סכום מבית העסק" },
+              ].map((opt) => (
+                <button
+                  key={String(opt.value)}
+                  type="button"
+                  onClick={() => setAnyAmount(opt.value)}
+                  style={{
+                    ...font,
+                    flex: 1,
+                    fontSize: 12,
+                    padding: "8px 6px",
+                    borderRadius: 10,
+                    cursor: "pointer",
+                    color: anyAmount === opt.value ? "#f2f5f8" : "#8a7f68",
+                    background: anyAmount === opt.value ? "#2a2418" : "transparent",
+                    border: `1px solid ${anyAmount === opt.value ? "#fbbf24" : "#3a3115"}`,
+                  }}
+                >
+                  {opt.text}
+                </button>
+              ))}
+            </div>
+          )}
 
           <div style={{ display: "flex", gap: 10, marginTop: 14 }}>
             <button
