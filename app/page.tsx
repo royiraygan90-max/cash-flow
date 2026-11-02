@@ -11,6 +11,7 @@ import TradingPnlCard from "@/app/components/TradingPnlCard";
 import FreelancePnlCard from "@/app/components/FreelancePnlCard";
 import TransactionList from "@/app/components/TransactionList";
 import PendingReviewCard from "@/app/components/PendingReviewCard";
+import PasteSmsCard from "@/app/components/PasteSmsCard";
 
 const HEBREW_MONTHS_SHORT = [
   "ינ","פב","מר","אפ","מי","יו",
@@ -122,6 +123,8 @@ export default async function DashboardPage({ searchParams }: PageProps) {
       }}
     >
       <MonthNavigator month={month} year={year} />
+
+      <PasteSmsCard />
 
       <PendingReviewCard
         charges={pendingCharges.map((t) => ({ id: t.id, date: t.date.toISOString(), amount: t.amount, merchant: t.description }))}
