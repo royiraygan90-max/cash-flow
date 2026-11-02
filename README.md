@@ -59,6 +59,10 @@ The message is parsed here, so a change in wording is fixed on the server, not o
 The same message arriving again within 10 minutes is treated as a retry and never duplicates. With JSON, `receivedAt` (any string
 that differs per message) is used instead of the time window to tell two identical purchases apart.
 
+A charge that a rule files on its own is also listed in a card at the top of the dashboard ("נוספו N חיובים לחשבון", with each
+charge's note, category and amount and the total) until the person taps "הבנתי" (`Transaction.unseen`, cleared by `POST /api/transactions/seen`
+for the ids that were shown), so it is certain it landed. Charges waiting for review stay in their own card.
+
 Rules are managed on the "כללי סיווג" screen (`/rules`, linked from the dashboard): add, edit and delete a rule — merchant, an optional
 amount (empty = any amount), category and note. An exact-amount rule outranks an any-amount one for the same merchant. A new or changed rule also
 files the charges waiting for review that match it; charges already filed are never touched. When filing a waiting charge, "זכור לפעם הבאה" can

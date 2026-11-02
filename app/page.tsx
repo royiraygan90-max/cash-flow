@@ -11,6 +11,7 @@ import TradingPnlCard from "@/app/components/TradingPnlCard";
 import FreelancePnlCard from "@/app/components/FreelancePnlCard";
 import TransactionList from "@/app/components/TransactionList";
 import PendingReviewCard from "@/app/components/PendingReviewCard";
+import AutoAddedCard from "@/app/components/AutoAddedCard";
 
 const HEBREW_MONTHS_SHORT = [
   "ינ","פב","מר","אפ","מי","יו",
@@ -45,12 +46,14 @@ export default async function DashboardPage({ searchParams }: PageProps) {
   const totalIncome   = totalIncomeRaw - freelanceExpense;
   const totalExpenses = totalExpensesRaw - freelanceExpense;
 
-  const [monthShifts, salarySettings, categoryBudgets, pendingCharges] = await Promise.all([
+  const [monthShifts, salarySettings, categoryBudgets, pendingCharges, autoAdded] = await Promise.all([
     prisma.shift.findMany({ where: { userId: user.id, date: { gte: start, lt: end } } }),
     prisma.salarySettings.findUnique({ where: { userId_month_year: { userId: user.id, month, year } } }),
     prisma.categoryBudget.findMany({ where: { userId: user.id } }),
     // Whatever month they are in: a charge waiting for review stays on the dashboard until it is settled
     prisma.transaction.findMany({ where: { userId: user.id, needsReview: true }, orderBy: { date: "desc" } }),
+    // Charges a rule filed by itself, until the user has acknowledged them (any month)
+    prisma.transaction.findMany({ where: { userId: user.id, unseen: true }, orderBy: { date: "desc" } }),
   ]);
   const budgets = Object.fromEntries(categoryBudgets.map((b) => [b.category, b.amount]));
   const regularHours      = monthShifts.reduce((s, sh) => s + sh.regularHours, 0);
@@ -122,6 +125,10 @@ export default async function DashboardPage({ searchParams }: PageProps) {
       }}
     >
       <MonthNavigator month={month} year={year} />
+
+      <AutoAddedCard
+        charges={autoAdded.map((t) => ({ id: t.id, date: t.date.toISOString(), amount: t.amount, description: t.description, category: t.category }))}
+      />
 
       <PendingReviewCard
         charges={pendingCharges.map((t) => ({ id: t.id, date: t.date.toISOString(), amount: t.amount, merchant: t.description }))}

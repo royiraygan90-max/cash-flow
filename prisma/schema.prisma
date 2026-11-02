@@ -48,6 +48,10 @@ model Transaction {
   // (as "אחר") but waits on the dashboard for the user to pick a category and a note.
   needsReview Boolean @default(false)
 
+  // A charge that a rule filed on its own, which the user has not yet been told about: the
+  // dashboard lists it ("נוספו N חיובים לחשבון") until they dismiss it.
+  unseen Boolean @default(false)
+
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
