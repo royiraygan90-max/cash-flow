@@ -43,13 +43,40 @@ body {
   background: var(--bg-primary);
   color: var(--text-primary);
   font-family: 'Rubik', sans-serif;
-  min-height: 100vh;
-  overscroll-behavior-y: none;
+  height: 100%;
+  overflow: hidden; /* the document never scrolls — see .app-shell */
+  overscroll-behavior: none;
 }
 
-body {
+/*
+ * App frame. The shell is pinned to the viewport and the page scrolls inside
+ * .app-scroll, so the mobile bottom nav (a flex sibling, not position: fixed)
+ * can never drift away from the bottom of the screen on iOS.
+ * Safe-area insets are handled here (top) and on the nav itself (bottom).
+ */
+.app-shell {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
   padding-top: env(safe-area-inset-top);
-  padding-bottom: env(safe-area-inset-bottom);
+  background: var(--bg-primary);
+}
+
+.app-scroll {
+  order: 1;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+}
+
+/* Pages ask for min-height: 100vh, which is taller than the area left above
+   the nav and would force a pointless scroll; fill the scroller instead. */
+.app-scroll > * {
+  min-height: 100% !important;
 }
 
 /* Prevent iOS Safari auto-zoom on input focus (triggers when font-size < 16px) */
