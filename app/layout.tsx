@@ -4,6 +4,7 @@ import "./globals.css";
 import AppNav from "@/app/components/AppNav";
 import SubscriptionsAutoApply from "@/app/components/SubscriptionsAutoApply";
 import ToastProvider from "@/app/components/Toast";
+import AppShell from "@/app/components/AppShell";
 import { getCurrentUser } from "@/lib/auth";
 
 const rubik = Rubik({
@@ -47,9 +48,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       </head>
       <body className={rubik.variable} style={{ fontFamily: "Rubik, sans-serif" }}>
         <ToastProvider>
-          {user && <AppNav />}
           {user && <SubscriptionsAutoApply />}
-          {children}
+          <AppShell nav={user ? <AppNav /> : null}>{children}</AppShell>
         </ToastProvider>
       </body>
     </html>

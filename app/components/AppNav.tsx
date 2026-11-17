@@ -63,10 +63,12 @@ export default function AppNav() {
       <nav
         className="md:hidden"
         style={{
-          position: "fixed",
-          bottom: 0,
-          left: 0,
-          right: 0,
+          // Sits below the scroller in the app shell's flex column (not
+          // position: fixed) so it can't detach from the screen on iOS.
+          // `relative` + z-index keep the FAB that overhangs the bar on top.
+          position: "relative",
+          order: 2,
+          flexShrink: 0,
           zIndex: 40,
           background: "#0b0e12",
           borderTop: "1px solid #161b22",
@@ -117,8 +119,8 @@ export default function AppNav() {
       <nav
         className="hidden md:flex"
         style={{
-          position: "sticky",
-          top: 0,
+          position: "relative",
+          flexShrink: 0,
           zIndex: 40,
           background: "#0b0e12",
           borderBottom: "1px solid #161b22",
