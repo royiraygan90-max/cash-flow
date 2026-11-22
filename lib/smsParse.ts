@@ -1,8 +1,12 @@
 /**
- * Parses a card-charge SMS (Isracard wording) into a transaction.
+ * Parses a card-charge SMS (Isracard wording) into a transaction. Two wordings are in use:
  *
  *   שלום, בכרטיסך המסתיים ב-2975, אושרה עסקה ב-01/11 בסך 90.00 ש"ח ברותם אפרים הייר דיזי.
- *   למידע נוסף באפליקציה ובאתר: https://...  לשירותך, ישראכרט
+ *   שלום, בכרטיסך 2975 אושרה עסקה ב-22/11 בסך ILS 190.38 בaliexpress - LUXEMBOURG.
+ *
+ * (the older one spells out "המסתיים ב-" and puts the currency after the amount; the newer one
+ * drops those words and puts it before). Each ends with "למידע נוסף באפליקציה ובאתר: https://...
+ * לשירותך, ישראכרט". The merchant is glued to the preposition "ב", whatever script it is in.
  *
  * Returns a reason instead of guessing when the text is not a plain shekel purchase
  * (foreign currency, refunds, a different wording), so the caller can report it.
@@ -23,8 +27,15 @@ const INVISIBLE = /[‎‏‪-‮⁦-⁩﻿]/g;
 
 const SHEKEL = /^(?:ש["״”]ח|שח|₪|ILS)$/i;
 
-const PURCHASE =
-  /בכרטיסך המסתיים ב-?\s*(\d{4})\s*,?\s*אושרה עסקה ב-?\s*(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?\s+בסך\s+([\d,]+(?:\.\d+)?)\s+(\S+)\s+([\s\S]*?)\s*(?:\.\s*)?(?:למידע נוסף|$)/;
+// "בכרטיסך המסתיים ב-2975," (older) or "בכרטיסך 2975" (newer)
+const CARD = String.raw`בכרטיסך(?:\s+המסתיים\s+ב-?)?\s*(\d{4})\s*,?`;
+const AMOUNT = String.raw`[\d,]+(?:\.\d+)?`;
+// The currency comes after the amount ("90.00 ש"ח") or before it ("ILS 190.38")
+const SUM = String.raw`(?:([^\s\d]+)\s*(${AMOUNT})|(${AMOUNT})\s*(\S+))`;
+
+const PURCHASE = new RegExp(
+  `${CARD}\\s*אושרה עסקה ב-?\\s*(\\d{1,2})\\/(\\d{1,2})(?:\\/(\\d{2,4}))?\\s+בסך\\s+${SUM}\\s+([\\s\\S]*?)\\s*(?:\\.\\s*)?(?:למידע נוסף|$)`,
+);
 
 const pad = (n: number) => String(n).padStart(2, "0");
 
@@ -58,7 +69,7 @@ function isRealDay(year: number, month: number, day: number) {
   return d.getUTCFullYear() === year && d.getUTCMonth() === month - 1 && d.getUTCDate() === day;
 }
 
-const OPENING = "בכרטיסך המסתיים";
+const OPENING = "בכרטיסך";
 
 /**
  * An iOS automation can hand over the same message twice in a row, with nothing between
@@ -80,7 +91,9 @@ export function parseCardSms(text: string, now: Date = new Date()): SmsParseResu
   const m = PURCHASE.exec(clean);
   if (!m) return { ok: false, reason: "unrecognized-format" };
 
-  const [, last4, dayStr, monthStr, yearStr, amountStr, currency, rawMerchant] = m;
+  const [, last4, dayStr, monthStr, yearStr, curBefore, amountBefore, amountAfter, curAfter, rawMerchant] = m;
+  const amountStr = amountBefore ?? amountAfter;
+  const currency = curBefore ?? curAfter;
   if (!SHEKEL.test(currency)) return { ok: false, reason: `unsupported-currency:${currency}` };
 
   const day = Number(dayStr);
@@ -93,7 +106,8 @@ export function parseCardSms(text: string, now: Date = new Date()): SmsParseResu
   if (!Number.isFinite(amount) || amount <= 0) return { ok: false, reason: "invalid-amount" };
 
   // The merchant is glued to the Hebrew preposition "ב" ("ב" + "חנות"), which is not part of its name
-  const merchant = rawMerchant.replace(/^ב/, "").replace(/[.\s]+$/, "").trim();
+  // (a hyphen after it, "ב-APPLE", is just as much a separator when the name is in Latin letters)
+  const merchant = rawMerchant.replace(/^ב(?:-(?=[A-Za-z]))?/, "").replace(/[.\s]+$/, "").trim();
   if (!merchant) return { ok: false, reason: "missing-merchant" };
 
   return { ok: true, value: { last4, date: `${year}-${pad(month)}-${pad(day)}`, amount, merchant } };
