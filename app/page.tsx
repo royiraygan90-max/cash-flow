@@ -131,7 +131,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
       />
 
       <PendingReviewCard
-        charges={pendingCharges.map((t) => ({ id: t.id, date: t.date.toISOString(), amount: t.amount, merchant: t.description }))}
+        charges={pendingCharges.map((t) => ({ id: t.id, date: t.date.toISOString(), amount: t.amount, merchant: t.description, foreignAmount: t.foreignAmount, foreignCurrency: t.foreignCurrency }))}
       />
 
       <BalanceHeroCard totalIncome={totalIncome} totalExpenses={totalExpenses} projectedBalance={projectedBalance} />

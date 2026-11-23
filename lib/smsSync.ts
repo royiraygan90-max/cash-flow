@@ -1,6 +1,7 @@
 import { createHash } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { findRule } from "@/lib/merchantRules";
+import { estimateShekels } from "@/lib/fx";
 import { parseCardSms, type ParsedSms } from "@/lib/smsParse";
 
 export const SMS_SOURCE = "sms";
@@ -13,8 +14,10 @@ const RETRY_WINDOW_MS = 10 * 60 * 1000;
 
 /** What the message says, without when it arrived. */
 function smsFingerprint(parsed: ParsedSms): string {
-  const basis = [parsed.last4, parsed.date, parsed.amount.toFixed(2), parsed.merchant.toLowerCase()].join("|");
-  return createHash("sha256").update(basis).digest("hex").slice(0, 32);
+  const basis = [parsed.last4, parsed.date, parsed.amount.toFixed(2), parsed.merchant.toLowerCase()];
+  // Shekel charges keep the identity they always had, so a re-sent older message still maps to its row
+  if (parsed.currency !== "ILS") basis.push(parsed.currency);
+  return createHash("sha256").update(basis.join("|")).digest("hex").slice(0, 32);
 }
 
 /**
@@ -48,8 +51,20 @@ export function parseSmsRequest(body: unknown): SmsRequest | null {
 }
 
 export type SmsOutcome =
-  | { status: "created"; id: string; date: string; amount: number; description: string; category: string; needsReview: boolean }
+  | {
+      status: "created";
+      id: string;
+      date: string;
+      /** In shekels; an estimate when `foreign` is set */
+      amount: number;
+      description: string;
+      category: string;
+      needsReview: boolean;
+      /** What the SMS said, for a charge in another currency */
+      foreign?: { amount: number; currency: string };
+    }
   | { status: "duplicate"; id: string }
+  | { status: "ignored"; merchant: string }
   | { status: "duplicate-of-manual"; existing: { id: string; category: string; description: string } }
   | { status: "unparsed"; reason: string };
 
@@ -57,6 +72,12 @@ export async function applySms(userId: string, req: SmsRequest, now: Date = new 
   const parsed = parseCardSms(req.text, now);
   if (!parsed.ok) return { status: "unparsed", reason: parsed.reason };
   const sms = parsed.value;
+  const isForeign = sms.currency !== "ILS";
+
+  // A merchant the user told us to skip (a subscription tracked elsewhere) is not added at all
+  // For a charge in another currency, the rule's amount is the one the SMS states
+  const rule = await findRule(userId, sms.merchant, sms.amount);
+  if (rule?.ignore) return { status: "ignored", merchant: sms.merchant };
 
   const externalId = smsExternalId(sms, req.receivedAt, now);
   if (req.receivedAt === null) {
@@ -78,15 +99,19 @@ export async function applySms(userId: string, req: SmsRequest, now: Date = new 
   if (already) return { status: "duplicate", id: already.id };
 
   const dayStart = new Date(sms.date);
-  const nextDay = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
-  const entered = await prisma.transaction.findFirst({
-    where: { userId, type: "expense", source: null, amount: sms.amount, date: { gte: dayStart, lt: nextDay } },
-    select: { id: true, category: true, description: true },
-  });
-  if (entered) return { status: "duplicate-of-manual", existing: entered };
+  const amount = estimateShekels(sms.amount, sms.currency);
+
+  // Something entered by hand is in shekels, so only a shekel charge can be compared with it
+  if (!isForeign) {
+    const nextDay = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
+    const entered = await prisma.transaction.findFirst({
+      where: { userId, type: "expense", source: null, amount, date: { gte: dayStart, lt: nextDay } },
+      select: { id: true, category: true, description: true },
+    });
+    if (entered) return { status: "duplicate-of-manual", existing: entered };
+  }
 
   // A rule for this merchant (and amount) files it straight away; anything else waits for the user
-  const rule = await findRule(userId, sms.merchant, sms.amount);
   const description = (rule?.note.trim() || sms.merchant).slice(0, 200);
   const category = rule?.category ?? UNREVIEWED_CATEGORY;
   const needsReview = rule === null;
@@ -98,7 +123,9 @@ export async function applySms(userId: string, req: SmsRequest, now: Date = new 
       category,
       // While it waits for review the description stays the merchant name, which is what the rule is made from
       description,
-      amount: sms.amount,
+      amount,
+      foreignAmount: isForeign ? sms.amount : null,
+      foreignCurrency: isForeign ? sms.currency : null,
       userId,
       source: SMS_SOURCE,
       externalId,
@@ -108,5 +135,14 @@ export async function applySms(userId: string, req: SmsRequest, now: Date = new 
     },
   });
 
-  return { status: "created", id: created.id, date: sms.date, amount: sms.amount, description, category, needsReview };
+  return {
+    status: "created",
+    id: created.id,
+    date: sms.date,
+    amount,
+    description,
+    category,
+    needsReview,
+    ...(isForeign ? { foreign: { amount: sms.amount, currency: sms.currency } } : {}),
+  };
 }

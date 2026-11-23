@@ -10,6 +10,7 @@ const sameAmount = (a: number, b: number) => Math.abs(a - b) < 0.005;
 /**
  * The rule for this charge: one for this merchant and exactly this amount, else one for
  * the merchant at any amount. Null when nothing matches, and the charge goes to review.
+ * For a charge in another currency, `amount` is the figure in that currency, as the SMS says it.
  */
 export async function findRule(userId: string, merchant: string, amount: number) {
   const rules = await prisma.merchantRule.findMany({
@@ -24,60 +25,72 @@ export async function findRule(userId: string, merchant: string, amount: number)
 }
 
 /** Creates the rule, or replaces the category and note of an existing one for the same merchant and amount. */
-export async function saveRule(
-  userId: string,
-  rule: { merchant: string; amount: number | null; category: string; note: string },
-) {
+export async function saveRule(userId: string, rule: RuleFields) {
   const merchant = normalizeMerchant(rule.merchant);
   const existing = await prisma.merchantRule.findFirst({
     where: { userId, merchant, amount: rule.amount },
   });
   if (existing) {
-    return prisma.merchantRule.update({ where: { id: existing.id }, data: { category: rule.category, note: rule.note } });
+    return prisma.merchantRule.update({
+      where: { id: existing.id },
+      data: { category: rule.category, note: rule.note, ignore: rule.ignore },
+    });
   }
   return prisma.merchantRule.create({
-    data: { userId, merchant, amount: rule.amount, category: rule.category, note: rule.note },
+    data: { userId, merchant, amount: rule.amount, category: rule.category, note: rule.note, ignore: rule.ignore },
   });
 }
 
-/** Only the rule's own fields, checked: what a request to create or change a rule may carry. */
-export type RuleFields = { merchant: string; amount: number | null; category: string; note: string };
+/**
+ * Only the rule's own fields, checked: what a request to create or change a rule may carry.
+ * An `ignore` rule has no category or note: matching charges are not added at all.
+ */
+export type RuleFields = { merchant: string; amount: number | null; category: string; note: string; ignore: boolean };
 
 /** Returns null when the body isn't a well-formed rule. An empty or missing amount means any amount. */
 export function parseRuleFields(body: unknown): RuleFields | null {
   if (!body || typeof body !== "object") return null;
   const b = body as Record<string, unknown>;
   const merchant = typeof b.merchant === "string" ? normalizeMerchant(b.merchant).slice(0, 200) : "";
-  const category = typeof b.category === "string" ? b.category.trim().slice(0, 60) : "";
-  const note = typeof b.note === "string" ? b.note.trim().slice(0, 200) : "";
-  if (!merchant || !category) return null;
+  const ignore = b.ignore === true;
+  const category = !ignore && typeof b.category === "string" ? b.category.trim().slice(0, 60) : "";
+  const note = !ignore && typeof b.note === "string" ? b.note.trim().slice(0, 200) : "";
+  if (!merchant || (!ignore && !category)) return null;
 
   let amount: number | null = null;
   if (b.amount !== null && b.amount !== undefined && b.amount !== "") {
     amount = typeof b.amount === "number" ? b.amount : Number(b.amount);
     if (!Number.isFinite(amount) || amount <= 0) return null;
   }
-  return { merchant, amount, category, note };
+  return { merchant, amount, category, note, ignore };
 }
 
 /**
- * Files the charges that are waiting for review and match this rule (same merchant, and the
- * same amount unless the rule covers any amount). Charges already filed are left alone.
+ * Settles the charges that are waiting for review and match this rule (same merchant, and the
+ * same amount unless the rule covers any amount): files them under the rule's category, or, for an
+ * ignore rule, removes them. Charges already filed are left alone.
  */
 export async function settleWaiting(userId: string, rule: RuleFields) {
   const waiting = await prisma.transaction.findMany({
-    where: { userId, needsReview: true, ...(rule.amount === null ? {} : { amount: rule.amount }) },
-    select: { id: true, description: true, amount: true },
+    where: { userId, needsReview: true },
+    select: { id: true, description: true, amount: true, foreignAmount: true },
   });
   const merchant = normalizeMerchant(rule.merchant);
   const matching = waiting.filter(
-    (w) => normalizeMerchant(w.description) === merchant && (rule.amount === null || sameAmount(w.amount, rule.amount)),
+    (w) =>
+      normalizeMerchant(w.description) === merchant &&
+      // A charge in another currency is matched by what the SMS said, not by the estimate in shekels
+      (rule.amount === null || sameAmount(w.foreignAmount ?? w.amount, rule.amount)),
   );
   for (const w of matching) {
-    await prisma.transaction.update({
-      where: { id: w.id },
-      data: { category: rule.category, description: rule.note || w.description, needsReview: false },
-    });
+    if (rule.ignore) {
+      await prisma.transaction.delete({ where: { id: w.id } });
+    } else {
+      await prisma.transaction.update({
+        where: { id: w.id },
+        data: { category: rule.category, description: rule.note || w.description, needsReview: false },
+      });
+    }
   }
   return matching.length;
 }

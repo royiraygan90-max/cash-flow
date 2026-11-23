@@ -22,7 +22,7 @@ export default async function RulesPage() {
         direction: "rtl",
       }}
     >
-      <RulesManager rules={rules.map((r) => ({ id: r.id, merchant: r.merchant, amount: r.amount, category: r.category, note: r.note }))} />
+      <RulesManager rules={rules.map((r) => ({ id: r.id, merchant: r.merchant, amount: r.amount, category: r.category, note: r.note, ignore: r.ignore }))} />
     </main>
   );
 }

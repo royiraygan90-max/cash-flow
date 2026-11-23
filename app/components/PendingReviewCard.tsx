@@ -12,6 +12,9 @@ export interface PendingCharge {
   amount: number;
   /** The merchant name from the SMS */
   merchant: string;
+  /** For a charge in another currency: what the SMS said. `amount` is then an estimate in shekels */
+  foreignAmount: number | null;
+  foreignCurrency: string | null;
 }
 
 const font = { fontFamily: "Rubik, sans-serif" } as const;
@@ -33,14 +36,25 @@ function PendingRow({ charge }: { charge: PendingCharge }) {
   const [anyAmount, setAnyAmount] = useState(false);
   const [busy, setBusy] = useState(false);
 
+  const isForeign = charge.foreignAmount !== null && charge.foreignCurrency !== null;
+  // What the SMS said, which is also what a saved rule compares with
+  const statedAmount = isForeign ? charge.foreignAmount! : charge.amount;
+  const statedText = isForeign
+    ? `${charge.foreignCurrency} ${charge.foreignAmount!.toLocaleString("he-IL")}`
+    : `₪${charge.amount.toLocaleString("he-IL")}`;
+  // A charge in another currency arrives with a guess in shekels, which the person can correct
+  const [shekels, setShekels] = useState(String(charge.amount));
+  const shekelsValue = Number(shekels);
+  const shekelsOk = !isForeign || (Number.isFinite(shekelsValue) && shekelsValue > 0);
+
   async function save() {
-    if (!category) return;
+    if (!category || !shekelsOk) return;
     setBusy(true);
     try {
       const res = await fetch(`/api/transactions/${charge.id}/review`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ category, note, remember, anyAmount }),
+        body: JSON.stringify({ category, note, remember, anyAmount, ...(isForeign ? { amount: shekelsValue } : {}) }),
       });
       if (!res.ok) throw new Error("review failed");
       showToast({
@@ -51,6 +65,30 @@ function PendingRow({ charge }: { charge: PendingCharge }) {
       startTransition(() => router.refresh());
     } catch {
       showToast({ type: "error", message: "השמירה נכשלה", detail: "בדוק את החיבור ונסה שוב" });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  // A subscription, or anything else that is already counted elsewhere: drop the charge, and with
+  // "remember" skip every later one from the same merchant instead of asking again
+  async function skip() {
+    setBusy(true);
+    try {
+      const res = await fetch(`/api/transactions/${charge.id}/review`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ignore: true, remember, anyAmount }),
+      });
+      if (!res.ok) throw new Error("skip failed");
+      showToast({
+        type: "success",
+        message: "החיוב לא נוסף",
+        detail: remember ? "חיובים כאלה לא יתווספו ולא ישאלו שוב" : undefined,
+      });
+      startTransition(() => router.refresh());
+    } catch {
+      showToast({ type: "error", message: "הפעולה נכשלה", detail: "בדוק את החיבור ונסה שוב" });
     } finally {
       setBusy(false);
     }
@@ -81,10 +119,13 @@ function PendingRow({ charge }: { charge: PendingCharge }) {
           <p style={{ ...font, fontSize: 14, fontWeight: 500, color: "#f2f5f8", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
             {charge.merchant}
           </p>
-          <p style={{ ...font, fontSize: 11, color: "#8a7f68", marginTop: 2 }}>{fmtDate(charge.date)}</p>
+          <p style={{ ...font, fontSize: 11, color: "#8a7f68", marginTop: 2 }}>
+            {fmtDate(charge.date)}
+            {isForeign && " · בחו״ל / במט״ח"}
+          </p>
         </div>
         <span dir="ltr" style={{ ...font, fontSize: 15, fontWeight: 600, color: "#f2f5f8" }}>
-          ₪{charge.amount.toLocaleString("he-IL")}
+          {isForeign ? statedText : `₪${charge.amount.toLocaleString("he-IL")}`}
         </span>
       </button>
 
@@ -116,6 +157,33 @@ function PendingRow({ charge }: { charge: PendingCharge }) {
             })}
           </div>
 
+          {isForeign && (
+            <div style={{ marginTop: 12 }}>
+              <span style={{ ...font, fontSize: 12, color: "#8a7f68", display: "block", marginBottom: 6 }}>
+                הסכום בשקלים (משוער, תקן לפי החיוב בפועל)
+              </span>
+              <input
+                type="text"
+                inputMode="decimal"
+                value={shekels}
+                onChange={(e) => setShekels(e.target.value)}
+                style={{
+                  ...font,
+                  width: "100%",
+                  background: "#11151b",
+                  border: `1px solid ${shekelsOk ? "#1b212a" : "#7f1d1d"}`,
+                  color: "#f2f5f8",
+                  borderRadius: 12,
+                  padding: "10px 14px",
+                  fontSize: 16,
+                  outline: "none",
+                  direction: "ltr",
+                  textAlign: "right",
+                }}
+              />
+            </div>
+          )}
+
           <input
             type="text"
             value={note}
@@ -138,13 +206,13 @@ function PendingRow({ charge }: { charge: PendingCharge }) {
 
           <label style={{ ...font, display: "flex", alignItems: "center", gap: 8, marginTop: 12, fontSize: 13, color: "#c9bfa6", cursor: "pointer" }}>
             <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
-            זכור לפעם הבאה
+            זכור לפעם הבאה (גם אם בוחרים ״מנוי, לא להוסיף״)
           </label>
 
           {remember && (
             <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
               {[
-                { value: false, text: `אותו סכום (₪${charge.amount.toLocaleString("he-IL")})` },
+                { value: false, text: `אותו סכום (${statedText})` },
                 { value: true, text: "כל סכום מבית העסק" },
               ].map((opt) => (
                 <button
@@ -172,7 +240,7 @@ function PendingRow({ charge }: { charge: PendingCharge }) {
           <div style={{ display: "flex", gap: 10, marginTop: 14 }}>
             <button
               type="button"
-              disabled={!category || busy}
+              disabled={!category || !shekelsOk || busy}
               onClick={save}
               style={{
                 ...font,
@@ -182,12 +250,21 @@ function PendingRow({ charge }: { charge: PendingCharge }) {
                 border: "none",
                 fontSize: 14,
                 fontWeight: 600,
-                cursor: category && !busy ? "pointer" : "default",
+                cursor: category && shekelsOk && !busy ? "pointer" : "default",
                 background: category ? "#fbbf24" : "#2a2418",
                 color: category ? "#1a1405" : "#6b6350",
               }}
             >
               שמור
+            </button>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={skip}
+              title="לא להוסיף את החיוב לרשימה (למשל מנוי שכבר מנוהל במקום אחר)"
+              style={{ ...font, padding: "11px 14px", borderRadius: 12, border: "1px solid #3a3115", background: "transparent", color: "#fbbf24", fontSize: 14, cursor: "pointer" }}
+            >
+              מנוי, לא להוסיף
             </button>
             <button
               type="button"

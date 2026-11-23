@@ -52,6 +52,11 @@ model Transaction {
   // dashboard lists it ("נוספו N חיובים לחשבון") until they dismiss it.
   unseen Boolean @default(false)
 
+  // For a card charge made in another currency: what the SMS said (e.g. 20 USD). `amount` then
+  // holds an estimate in shekels, which the user can correct while the charge waits for review.
+  foreignAmount   Float?
+  foreignCurrency String?
+
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -123,14 +128,17 @@ model CategoryBudget {
 
 /// "Charges from this merchant, for this amount, are this category with this note" —
 /// applied to card-charge SMS so a recurring expense lands without a review.
+/// With `ignore`, the charge is not added at all (a subscription that is tracked elsewhere).
 model MerchantRule {
   id        String   @id @default(cuid())
   /// The merchant name as it appears in the SMS, trimmed and lower-cased
   merchant  String
-  /// Null means any amount at this merchant
+  /// Null means any amount at this merchant. For a foreign-currency charge, the amount in that currency
   amount    Float?
+  /// Empty for an ignore rule
   category  String
   note      String   @default("")
+  ignore    Boolean  @default(false)
   createdAt DateTime @default(now())
 
   userId String
