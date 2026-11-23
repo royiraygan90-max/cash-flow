@@ -6,6 +6,7 @@ import { CATEGORY_COLORS, DEFAULT_CATEGORY_COLOR } from "@/lib/categoryColors";
 import { EXPENSE_CATEGORIES } from "./AddTransactionModal";
 import { useToast } from "./Toast";
 import Icon from "./Icon";
+import ModalPortal from "./ModalPortal";
 
 // Budgets only make sense for categories that actually show up in the
 // breakdown — פרילנס nets out against its own income and never appears there.
@@ -87,80 +88,82 @@ export default function CategoryBudgetsModal({ budgets, onClose }: Props) {
     : { background: "#0d1014", border: "1px solid #20272f", borderRadius: 28, boxShadow: "0 20px 60px rgba(0,0,0,0.6)", padding: "32px", width: "100%", maxWidth: 460, maxHeight: "88vh", overflowY: "auto" };
 
   return (
-    <div
-      style={{
-        position: "fixed", inset: 0,
-        background: "rgba(0,0,0,0.6)",
-        display: "flex",
-        alignItems: isMobile ? "flex-end" : "center",
-        justifyContent: "center",
-        zIndex: 50,
-        padding: isMobile ? 0 : 16,
-        direction: "rtl",
-      }}
-      onClick={(e) => e.target === e.currentTarget && onClose()}
-    >
-      <div style={modalStyle}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
-          <button
-            onClick={onClose}
-            style={{ width: 34, height: 34, borderRadius: "50%", background: "#161b22", border: "none", color: "#9aa6b4", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
-          >
-            <Icon name="close" size={18} />
-          </button>
-          <h2 style={{ fontSize: 17, fontWeight: 600, color: "#f2f5f8", fontFamily: "Rubik, sans-serif" }}>
-            תקציב לקטגוריות
-          </h2>
-          <div style={{ width: 34 }} />
-        </div>
+    <ModalPortal>
+      <div
+        style={{
+          position: "fixed", inset: 0,
+          background: "rgba(0,0,0,0.6)",
+          display: "flex",
+          alignItems: isMobile ? "flex-end" : "center",
+          justifyContent: "center",
+          zIndex: 50,
+          padding: isMobile ? 0 : 16,
+          direction: "rtl",
+        }}
+        onClick={(e) => e.target === e.currentTarget && onClose()}
+      >
+        <div style={modalStyle}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
+            <button
+              onClick={onClose}
+              style={{ width: 34, height: 34, borderRadius: "50%", background: "#161b22", border: "none", color: "#9aa6b4", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+            >
+              <Icon name="close" size={18} />
+            </button>
+            <h2 style={{ fontSize: 17, fontWeight: 600, color: "#f2f5f8", fontFamily: "Rubik, sans-serif" }}>
+              תקציב לקטגוריות
+            </h2>
+            <div style={{ width: 34 }} />
+          </div>
 
-        <p style={{ fontSize: 12, color: "#7c8896", fontFamily: "Rubik, sans-serif", marginBottom: 16, textAlign: "center" }}>
-          הגדר תקציב חודשי לקטגוריה — נסמן כשמתקרבים או חורגים ממנו. השאר ריק כדי לבטל.
-        </p>
+          <p style={{ fontSize: 12, color: "#7c8896", fontFamily: "Rubik, sans-serif", marginBottom: 16, textAlign: "center" }}>
+            הגדר תקציב חודשי לקטגוריה — נסמן כשמתקרבים או חורגים ממנו. השאר ריק כדי לבטל.
+          </p>
 
-        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          {BUDGETABLE_CATEGORIES.map((cat) => {
-            const c = CATEGORY_COLORS[cat] ?? DEFAULT_CATEGORY_COLOR;
-            return (
-              <div key={cat} style={pillRow}>
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <div style={{ width: 30, height: 30, borderRadius: 9, background: c.bg, color: c.color, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                    <Icon name={c.icon} size={16} />
+          <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {BUDGETABLE_CATEGORIES.map((cat) => {
+              const c = CATEGORY_COLORS[cat] ?? DEFAULT_CATEGORY_COLOR;
+              return (
+                <div key={cat} style={pillRow}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <div style={{ width: 30, height: 30, borderRadius: 9, background: c.bg, color: c.color, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                      <Icon name={c.icon} size={16} />
+                    </div>
+                    <span style={{ fontSize: 13, color: "#cdd5de", fontFamily: "Rubik, sans-serif" }}>{cat}</span>
                   </div>
-                  <span style={{ fontSize: 13, color: "#cdd5de", fontFamily: "Rubik, sans-serif" }}>{cat}</span>
+                  <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      placeholder="ללא תקציב"
+                      value={values[cat]}
+                      onChange={(e) => setValues((v) => ({ ...v, [cat]: e.target.value }))}
+                      style={numberInput}
+                    />
+                    <span style={{ fontSize: 13, color: "#7c8896", fontFamily: "Rubik, sans-serif" }}>₪</span>
+                  </div>
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                  <input
-                    type="text"
-                    inputMode="decimal"
-                    placeholder="ללא תקציב"
-                    value={values[cat]}
-                    onChange={(e) => setValues((v) => ({ ...v, [cat]: e.target.value }))}
-                    style={numberInput}
-                  />
-                  <span style={{ fontSize: 13, color: "#7c8896", fontFamily: "Rubik, sans-serif" }}>₪</span>
-                </div>
-              </div>
-            );
-          })}
+              );
+            })}
 
-          <button
-            type="submit"
-            disabled={isSaving || isPending}
-            style={{
-              width: "100%", padding: 16,
-              background: "#34e0a1", color: "#06231a",
-              border: "none", borderRadius: 16,
-              cursor: (isSaving || isPending) ? "not-allowed" : "pointer",
-              fontWeight: 600, fontSize: 16, fontFamily: "Rubik, sans-serif",
-              opacity: (isSaving || isPending) ? 0.7 : 1, marginTop: 4,
-              transition: "opacity 0.15s",
-            }}
-          >
-            {(isSaving || isPending) ? "שומר..." : "שמירת תקציבים"}
-          </button>
-        </form>
+            <button
+              type="submit"
+              disabled={isSaving || isPending}
+              style={{
+                width: "100%", padding: 16,
+                background: "#34e0a1", color: "#06231a",
+                border: "none", borderRadius: 16,
+                cursor: (isSaving || isPending) ? "not-allowed" : "pointer",
+                fontWeight: 600, fontSize: 16, fontFamily: "Rubik, sans-serif",
+                opacity: (isSaving || isPending) ? 0.7 : 1, marginTop: 4,
+                transition: "opacity 0.15s",
+              }}
+            >
+              {(isSaving || isPending) ? "שומר..." : "שמירת תקציבים"}
+            </button>
+          </form>
+        </div>
       </div>
-    </div>
+    </ModalPortal>
   );
 }

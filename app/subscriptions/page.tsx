@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { CATEGORY_COLORS, DEFAULT_CATEGORY_COLOR } from "@/lib/categoryColors";
 import Icon from "@/app/components/Icon";
+import ModalPortal from "@/app/components/ModalPortal";
 import { getSubValidityStatus, isSubscriptionInRange } from "@/lib/subscriptionRange";
 import { HEBREW_MONTHS_FULL } from "@/lib/hebrewDates";
 
@@ -452,191 +453,193 @@ export default function SubscriptionsPage() {
 
       {/* Add / Edit modal */}
       {modal.open && (
-        <div
-          style={{
-            position: "fixed", inset: 0,
-            background: "rgba(0,0,0,0.6)",
-            display: "flex",
-            alignItems: isMobile ? "flex-end" : "center",
-            justifyContent: "center",
-            zIndex: 50,
-            padding: isMobile ? 0 : 16,
-            direction: "rtl",
-          }}
-          onClick={(e) => e.target === e.currentTarget && closeModal()}
-        >
-          <div style={modalStyle}>
-            {/* Header */}
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
-              <button
-                onClick={closeModal}
-                style={{ width: 34, height: 34, borderRadius: "50%", background: "#161b22", border: "none", color: "#9aa6b4", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
-              >
-                <Icon name="close" size={18} />
-              </button>
-              <h2 style={{ fontSize: 17, fontWeight: 600, color: "#f2f5f8", fontFamily: "Rubik, sans-serif" }}>
-                {modal.editing ? "עריכת מנוי" : "מנוי חדש"}
-              </h2>
-              <div style={{ width: 34 }} />
-            </div>
-
-            <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              {/* Name */}
-              <div style={pillRow}>
-                <span style={{ fontSize: 13, color: "#7c8896", fontFamily: "Rubik, sans-serif", whiteSpace: "nowrap", flexShrink: 0 }}>שם</span>
-                <input
-                  type="text"
-                  value={form.name}
-                  onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                  required
-                  placeholder="Netflix, גים..."
-                  style={{ background: "transparent", border: "none", outline: "none", color: "#f2f5f8", fontSize: 16, fontFamily: "Rubik, sans-serif", textAlign: "left", flex: 1, direction: "ltr", minWidth: 0 }}
-                />
+        <ModalPortal>
+          <div
+            style={{
+              position: "fixed", inset: 0,
+              background: "rgba(0,0,0,0.6)",
+              display: "flex",
+              alignItems: isMobile ? "flex-end" : "center",
+              justifyContent: "center",
+              zIndex: 50,
+              padding: isMobile ? 0 : 16,
+              direction: "rtl",
+            }}
+            onClick={(e) => e.target === e.currentTarget && closeModal()}
+          >
+            <div style={modalStyle}>
+              {/* Header */}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
+                <button
+                  onClick={closeModal}
+                  style={{ width: 34, height: 34, borderRadius: "50%", background: "#161b22", border: "none", color: "#9aa6b4", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                >
+                  <Icon name="close" size={18} />
+                </button>
+                <h2 style={{ fontSize: 17, fontWeight: 600, color: "#f2f5f8", fontFamily: "Rubik, sans-serif" }}>
+                  {modal.editing ? "עריכת מנוי" : "מנוי חדש"}
+                </h2>
+                <div style={{ width: 34 }} />
               </div>
 
-              {/* Amount */}
-              <div style={pillRow}>
-                <span style={{ fontSize: 13, color: "#7c8896", fontFamily: "Rubik, sans-serif", whiteSpace: "nowrap", flexShrink: 0 }}>
-                  {form.hasValidity && form.endMode === "installments" ? "סכום כולל ₪" : "סכום ₪"}
-                </span>
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  value={form.amount}
-                  onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))}
-                  required placeholder="0"
-                  style={{ background: "transparent", border: "none", outline: "none", color: "#f2f5f8", fontSize: 16, fontFamily: "Rubik, sans-serif", textAlign: "left", flex: 1, direction: "ltr", minWidth: 0 }}
-                />
-              </div>
+              <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                {/* Name */}
+                <div style={pillRow}>
+                  <span style={{ fontSize: 13, color: "#7c8896", fontFamily: "Rubik, sans-serif", whiteSpace: "nowrap", flexShrink: 0 }}>שם</span>
+                  <input
+                    type="text"
+                    value={form.name}
+                    onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                    required
+                    placeholder="Netflix, גים..."
+                    style={{ background: "transparent", border: "none", outline: "none", color: "#f2f5f8", fontSize: 16, fontFamily: "Rubik, sans-serif", textAlign: "left", flex: 1, direction: "ltr", minWidth: 0 }}
+                  />
+                </div>
 
-              {/* Day of month */}
-              <div style={pillRow}>
-                <span style={{ fontSize: 13, color: "#7c8896", fontFamily: "Rubik, sans-serif", whiteSpace: "nowrap", flexShrink: 0 }}>יום בחודש</span>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  value={form.dayOfMonth}
-                  onChange={(e) => setForm((f) => ({ ...f, dayOfMonth: e.target.value }))}
-                  required placeholder="1"
-                  style={{ background: "transparent", border: "none", outline: "none", color: "#f2f5f8", fontSize: 16, fontFamily: "Rubik, sans-serif", textAlign: "left", flex: 1, direction: "ltr", minWidth: 0 }}
-                />
-              </div>
+                {/* Amount */}
+                <div style={pillRow}>
+                  <span style={{ fontSize: 13, color: "#7c8896", fontFamily: "Rubik, sans-serif", whiteSpace: "nowrap", flexShrink: 0 }}>
+                    {form.hasValidity && form.endMode === "installments" ? "סכום כולל ₪" : "סכום ₪"}
+                  </span>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    value={form.amount}
+                    onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))}
+                    required placeholder="0"
+                    style={{ background: "transparent", border: "none", outline: "none", color: "#f2f5f8", fontSize: 16, fontFamily: "Rubik, sans-serif", textAlign: "left", flex: 1, direction: "ltr", minWidth: 0 }}
+                  />
+                </div>
 
-              {/* Category */}
-              <div style={pillRow}>
-                <span style={{ fontSize: 13, color: "#7c8896", fontFamily: "Rubik, sans-serif", whiteSpace: "nowrap", flexShrink: 0 }}>קטגוריה</span>
-                <input
-                  type="text"
-                  value={form.category}
-                  onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
-                  placeholder="מנוי"
-                  style={{ background: "transparent", border: "none", outline: "none", color: "#f2f5f8", fontSize: 16, fontFamily: "Rubik, sans-serif", textAlign: "left", flex: 1, direction: "ltr", minWidth: 0 }}
-                />
-              </div>
+                {/* Day of month */}
+                <div style={pillRow}>
+                  <span style={{ fontSize: 13, color: "#7c8896", fontFamily: "Rubik, sans-serif", whiteSpace: "nowrap", flexShrink: 0 }}>יום בחודש</span>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    value={form.dayOfMonth}
+                    onChange={(e) => setForm((f) => ({ ...f, dayOfMonth: e.target.value }))}
+                    required placeholder="1"
+                    style={{ background: "transparent", border: "none", outline: "none", color: "#f2f5f8", fontSize: 16, fontFamily: "Rubik, sans-serif", textAlign: "left", flex: 1, direction: "ltr", minWidth: 0 }}
+                  />
+                </div>
 
-              {/* Validity toggle */}
-              <label style={{ ...pillRow, cursor: "pointer" }}>
-                <span style={{ fontSize: 13, color: "#7c8896", fontFamily: "Rubik, sans-serif", whiteSpace: "nowrap", flexShrink: 0 }}>מנוי עם תוקף</span>
-                <input
-                  type="checkbox"
-                  checked={form.hasValidity}
-                  onChange={(e) => setForm((f) => ({ ...f, hasValidity: e.target.checked }))}
-                  style={{ width: 20, height: 20, accentColor: "#34e0a1" }}
-                />
-              </label>
+                {/* Category */}
+                <div style={pillRow}>
+                  <span style={{ fontSize: 13, color: "#7c8896", fontFamily: "Rubik, sans-serif", whiteSpace: "nowrap", flexShrink: 0 }}>קטגוריה</span>
+                  <input
+                    type="text"
+                    value={form.category}
+                    onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
+                    placeholder="מנוי"
+                    style={{ background: "transparent", border: "none", outline: "none", color: "#f2f5f8", fontSize: 16, fontFamily: "Rubik, sans-serif", textAlign: "left", flex: 1, direction: "ltr", minWidth: 0 }}
+                  />
+                </div>
 
-              {form.hasValidity && (
-                <>
-                  {/* Start month */}
-                  <div style={pillRow}>
-                    <span style={{ fontSize: 13, color: "#7c8896", fontFamily: "Rubik, sans-serif", whiteSpace: "nowrap", flexShrink: 0 }}>מתחיל ב</span>
-                    <input
-                      type="month"
-                      value={form.startMonth}
-                      onChange={(e) => setForm((f) => ({ ...f, startMonth: e.target.value }))}
-                      style={{ background: "transparent", border: "none", outline: "none", color: "#f2f5f8", fontSize: 16, fontFamily: "Rubik, sans-serif", flex: 1, direction: "ltr", colorScheme: "dark", minWidth: 0 }}
-                    />
-                  </div>
+                {/* Validity toggle */}
+                <label style={{ ...pillRow, cursor: "pointer" }}>
+                  <span style={{ fontSize: 13, color: "#7c8896", fontFamily: "Rubik, sans-serif", whiteSpace: "nowrap", flexShrink: 0 }}>מנוי עם תוקף</span>
+                  <input
+                    type="checkbox"
+                    checked={form.hasValidity}
+                    onChange={(e) => setForm((f) => ({ ...f, hasValidity: e.target.checked }))}
+                    style={{ width: 20, height: 20, accentColor: "#34e0a1" }}
+                  />
+                </label>
 
-                  {/* End mode segmented control */}
-                  <div style={{ display: "flex", gap: 8 }}>
-                    {(["date", "installments"] as const).map((mode) => (
-                      <button
-                        key={mode}
-                        type="button"
-                        onClick={() => setForm((f) => ({ ...f, endMode: mode }))}
-                        style={{
-                          flex: 1,
-                          padding: "10px 0",
-                          borderRadius: 12,
-                          border: `1px solid ${form.endMode === mode ? "#34e0a1" : "#20272f"}`,
-                          background: form.endMode === mode ? "rgba(52,224,161,.12)" : "#11151b",
-                          color: form.endMode === mode ? "#34e0a1" : "#7c8896",
-                          fontSize: 13,
-                          fontFamily: "Rubik, sans-serif",
-                          fontWeight: 600,
-                          cursor: "pointer",
-                        }}
-                      >
-                        {mode === "date" ? "תאריך סיום" : "מספר תשלומים"}
-                      </button>
-                    ))}
-                  </div>
-
-                  {form.endMode === "date" ? (
+                {form.hasValidity && (
+                  <>
+                    {/* Start month */}
                     <div style={pillRow}>
-                      <span style={{ fontSize: 13, color: "#7c8896", fontFamily: "Rubik, sans-serif", whiteSpace: "nowrap", flexShrink: 0 }}>מסתיים ב</span>
+                      <span style={{ fontSize: 13, color: "#7c8896", fontFamily: "Rubik, sans-serif", whiteSpace: "nowrap", flexShrink: 0 }}>מתחיל ב</span>
                       <input
                         type="month"
-                        value={form.endMonth}
-                        onChange={(e) => setForm((f) => ({ ...f, endMonth: e.target.value }))}
-                        required={form.hasValidity && form.endMode === "date"}
+                        value={form.startMonth}
+                        onChange={(e) => setForm((f) => ({ ...f, startMonth: e.target.value }))}
                         style={{ background: "transparent", border: "none", outline: "none", color: "#f2f5f8", fontSize: 16, fontFamily: "Rubik, sans-serif", flex: 1, direction: "ltr", colorScheme: "dark", minWidth: 0 }}
                       />
                     </div>
-                  ) : (
-                    <>
+
+                    {/* End mode segmented control */}
+                    <div style={{ display: "flex", gap: 8 }}>
+                      {(["date", "installments"] as const).map((mode) => (
+                        <button
+                          key={mode}
+                          type="button"
+                          onClick={() => setForm((f) => ({ ...f, endMode: mode }))}
+                          style={{
+                            flex: 1,
+                            padding: "10px 0",
+                            borderRadius: 12,
+                            border: `1px solid ${form.endMode === mode ? "#34e0a1" : "#20272f"}`,
+                            background: form.endMode === mode ? "rgba(52,224,161,.12)" : "#11151b",
+                            color: form.endMode === mode ? "#34e0a1" : "#7c8896",
+                            fontSize: 13,
+                            fontFamily: "Rubik, sans-serif",
+                            fontWeight: 600,
+                            cursor: "pointer",
+                          }}
+                        >
+                          {mode === "date" ? "תאריך סיום" : "מספר תשלומים"}
+                        </button>
+                      ))}
+                    </div>
+
+                    {form.endMode === "date" ? (
                       <div style={pillRow}>
-                        <span style={{ fontSize: 13, color: "#7c8896", fontFamily: "Rubik, sans-serif", whiteSpace: "nowrap", flexShrink: 0 }}>מספר תשלומים</span>
+                        <span style={{ fontSize: 13, color: "#7c8896", fontFamily: "Rubik, sans-serif", whiteSpace: "nowrap", flexShrink: 0 }}>מסתיים ב</span>
                         <input
-                          type="text"
-                          inputMode="numeric"
-                          value={form.installments}
-                          onChange={(e) => setForm((f) => ({ ...f, installments: e.target.value }))}
-                          required={form.hasValidity && form.endMode === "installments"}
-                          placeholder="10"
-                          style={{ background: "transparent", border: "none", outline: "none", color: "#f2f5f8", fontSize: 16, fontFamily: "Rubik, sans-serif", textAlign: "left", flex: 1, direction: "ltr", minWidth: 0 }}
+                          type="month"
+                          value={form.endMonth}
+                          onChange={(e) => setForm((f) => ({ ...f, endMonth: e.target.value }))}
+                          required={form.hasValidity && form.endMode === "date"}
+                          style={{ background: "transparent", border: "none", outline: "none", color: "#f2f5f8", fontSize: 16, fontFamily: "Rubik, sans-serif", flex: 1, direction: "ltr", colorScheme: "dark", minWidth: 0 }}
                         />
                       </div>
-                      {parseFloat(form.amount) > 0 && parseInt(form.installments, 10) > 0 && (
-                        <p style={{ fontSize: 12, color: "#6b7785", fontFamily: "Rubik, sans-serif", textAlign: "center", margin: "-4px 0 0" }}>
-                          {`= ₪${(Math.round((parseFloat(form.amount) / parseInt(form.installments, 10)) * 100) / 100).toLocaleString("he-IL")} לחודש`}
-                        </p>
-                      )}
-                    </>
-                  )}
-                </>
-              )}
+                    ) : (
+                      <>
+                        <div style={pillRow}>
+                          <span style={{ fontSize: 13, color: "#7c8896", fontFamily: "Rubik, sans-serif", whiteSpace: "nowrap", flexShrink: 0 }}>מספר תשלומים</span>
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            value={form.installments}
+                            onChange={(e) => setForm((f) => ({ ...f, installments: e.target.value }))}
+                            required={form.hasValidity && form.endMode === "installments"}
+                            placeholder="10"
+                            style={{ background: "transparent", border: "none", outline: "none", color: "#f2f5f8", fontSize: 16, fontFamily: "Rubik, sans-serif", textAlign: "left", flex: 1, direction: "ltr", minWidth: 0 }}
+                          />
+                        </div>
+                        {parseFloat(form.amount) > 0 && parseInt(form.installments, 10) > 0 && (
+                          <p style={{ fontSize: 12, color: "#6b7785", fontFamily: "Rubik, sans-serif", textAlign: "center", margin: "-4px 0 0" }}>
+                            {`= ₪${(Math.round((parseFloat(form.amount) / parseInt(form.installments, 10)) * 100) / 100).toLocaleString("he-IL")} לחודש`}
+                          </p>
+                        )}
+                      </>
+                    )}
+                  </>
+                )}
 
-              {/* Save */}
-              <button
-                type="submit"
-                disabled={saving}
-                style={{
-                  width: "100%", padding: 16,
-                  background: "#34e0a1", color: "#06231a",
-                  border: "none", borderRadius: 16,
-                  cursor: saving ? "not-allowed" : "pointer",
-                  fontWeight: 600, fontSize: 16, fontFamily: "Rubik, sans-serif",
-                  opacity: saving ? 0.7 : 1, marginTop: 4,
-                  transition: "opacity 0.15s",
-                }}
-              >
-                {saving ? "שומר..." : modal.editing ? "שמירת שינויים" : "הוסף מנוי"}
-              </button>
-            </form>
+                {/* Save */}
+                <button
+                  type="submit"
+                  disabled={saving}
+                  style={{
+                    width: "100%", padding: 16,
+                    background: "#34e0a1", color: "#06231a",
+                    border: "none", borderRadius: 16,
+                    cursor: saving ? "not-allowed" : "pointer",
+                    fontWeight: 600, fontSize: 16, fontFamily: "Rubik, sans-serif",
+                    opacity: saving ? 0.7 : 1, marginTop: 4,
+                    transition: "opacity 0.15s",
+                  }}
+                >
+                  {saving ? "שומר..." : modal.editing ? "שמירת שינויים" : "הוסף מנוי"}
+                </button>
+              </form>
+            </div>
           </div>
-        </div>
+        </ModalPortal>
       )}
     </main>
   );

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import type { SalaryProfile } from "@/lib/salaryCalc";
 import { useToast } from "./Toast";
 import Icon from "./Icon";
+import ModalPortal from "./ModalPortal";
 
 interface Props {
   profile: SalaryProfile;
@@ -103,106 +104,108 @@ export default function SalarySettingsModal({ profile, onClose }: Props) {
     : { background: "#0d1014", border: "1px solid #20272f", borderRadius: 28, boxShadow: "0 20px 60px rgba(0,0,0,0.6)", padding: "32px", width: "100%", maxWidth: 460 };
 
   return (
-    <div
-      style={{
-        position: "fixed", inset: 0,
-        background: "rgba(0,0,0,0.6)",
-        display: "flex",
-        alignItems: isMobile ? "flex-end" : "center",
-        justifyContent: "center",
-        zIndex: 50,
-        padding: isMobile ? 0 : 16,
-        direction: "rtl",
-      }}
-      onClick={(e) => e.target === e.currentTarget && onClose()}
-    >
-      <div style={modalStyle}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
-          <button
-            onClick={onClose}
-            style={{ width: 34, height: 34, borderRadius: "50%", background: "#161b22", border: "none", color: "#9aa6b4", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
-          >
-            <Icon name="close" size={18} />
-          </button>
-          <h2 style={{ fontSize: 17, fontWeight: 600, color: "#f2f5f8", fontFamily: "Rubik, sans-serif" }}>
-            הגדרות שכר
-          </h2>
-          <div style={{ width: 34 }} />
+    <ModalPortal>
+      <div
+        style={{
+          position: "fixed", inset: 0,
+          background: "rgba(0,0,0,0.6)",
+          display: "flex",
+          alignItems: isMobile ? "flex-end" : "center",
+          justifyContent: "center",
+          zIndex: 50,
+          padding: isMobile ? 0 : 16,
+          direction: "rtl",
+        }}
+        onClick={(e) => e.target === e.currentTarget && onClose()}
+      >
+        <div style={modalStyle}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
+            <button
+              onClick={onClose}
+              style={{ width: 34, height: 34, borderRadius: "50%", background: "#161b22", border: "none", color: "#9aa6b4", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+            >
+              <Icon name="close" size={18} />
+            </button>
+            <h2 style={{ fontSize: 17, fontWeight: 600, color: "#f2f5f8", fontFamily: "Rubik, sans-serif" }}>
+              הגדרות שכר
+            </h2>
+            <div style={{ width: 34 }} />
+          </div>
+
+          <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <div style={pillRow}>
+              <span style={{ fontSize: 13, color: "#7c8896", fontFamily: "Rubik, sans-serif", whiteSpace: "nowrap", flexShrink: 0 }}>תעריף שעתי רגיל ₪</span>
+              <input type="text" inputMode="decimal" value={regularRate} onChange={(e) => setRegularRate(e.target.value)} required style={numberInput} />
+            </div>
+
+            <div style={pillRow}>
+              <span style={{ fontSize: 13, color: "#7c8896", fontFamily: "Rubik, sans-serif", whiteSpace: "nowrap", flexShrink: 0 }}>תעריף שעתי בשבת ₪</span>
+              <input type="text" inputMode="decimal" value={shabbatRate} onChange={(e) => setShabbatRate(e.target.value)} required style={numberInput} />
+            </div>
+
+            <div style={pillRow}>
+              <span style={{ fontSize: 13, color: "#7c8896", fontFamily: "Rubik, sans-serif", whiteSpace: "nowrap", flexShrink: 0 }}>בונוס חודשי קבוע ₪</span>
+              <input type="text" inputMode="decimal" value={monthlyBonus} onChange={(e) => setMonthlyBonus(e.target.value)} required style={numberInput} />
+            </div>
+
+            <div style={pillRow}>
+              <span style={{ fontSize: 13, color: "#7c8896", fontFamily: "Rubik, sans-serif", whiteSpace: "nowrap", flexShrink: 0 }}>נסיעות ₪</span>
+              <input type="text" inputMode="decimal" value={travelAllowance} onChange={(e) => setTravelAllowance(e.target.value)} required style={numberInput} />
+            </div>
+
+            <div style={pillRow}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <span style={{ fontSize: 13, color: "#7c8896", fontFamily: "Rubik, sans-serif", display: "block" }}>ניכויים קבועים נוספים ₪</span>
+                <span style={{ fontSize: 11, color: "#5c6776", fontFamily: "Rubik, sans-serif", display: "block", marginTop: 4, lineHeight: 1.5 }}>
+                  למשל דמי טיפול/ועד — סכום קבוע שיורד כל חודש בלי קשר לשעות
+                </span>
+              </div>
+              <input type="text" inputMode="decimal" value={otherDeductions} onChange={(e) => setOtherDeductions(e.target.value)} required style={fixedNumberInput} />
+            </div>
+
+            <div style={pillRow}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <span style={{ fontSize: 13, color: "#7c8896", fontFamily: "Rubik, sans-serif", display: "block" }}>בסיס לקרן השתלמות ₪</span>
+                <span style={{ fontSize: 11, color: "#5c6776", fontFamily: "Rubik, sans-serif", display: "block", marginTop: 4, lineHeight: 1.5 }}>
+                  שכר קובע קבוע מהתלוש שלך (לא תלוי בשעות בפועל) — הניכוי הוא 2.5% ממנו
+                </span>
+              </div>
+              <input type="text" inputMode="decimal" value={studyFundBase} onChange={(e) => setStudyFundBase(e.target.value)} required style={fixedNumberInput} />
+            </div>
+
+            <label style={{ ...pillRow, cursor: "pointer", alignItems: "flex-start" }}>
+              <div>
+                <span style={{ fontSize: 13, color: "#7c8896", fontFamily: "Rubik, sans-serif", whiteSpace: "nowrap", display: "block" }}>שעות נוספות</span>
+                <span style={{ fontSize: 11, color: "#5c6776", fontFamily: "Rubik, sans-serif", display: "block", marginTop: 4, lineHeight: 1.5 }}>
+                  מעל 8 שעות במשמרת: 125% לשעה ה-9 וה-10, 150% מעבר לזה
+                </span>
+              </div>
+              <input
+                type="checkbox"
+                checked={overtimeEnabled}
+                onChange={(e) => setOvertimeEnabled(e.target.checked)}
+                style={{ width: 20, height: 20, accentColor: "#34e0a1", flexShrink: 0, marginTop: 2 }}
+              />
+            </label>
+
+            <button
+              type="submit"
+              disabled={isSaving || isPending}
+              style={{
+                width: "100%", padding: 16,
+                background: "#34e0a1", color: "#06231a",
+                border: "none", borderRadius: 16,
+                cursor: (isSaving || isPending) ? "not-allowed" : "pointer",
+                fontWeight: 600, fontSize: 16, fontFamily: "Rubik, sans-serif",
+                opacity: (isSaving || isPending) ? 0.7 : 1, marginTop: 4,
+                transition: "opacity 0.15s",
+              }}
+            >
+              {(isSaving || isPending) ? "שומר..." : "שמירת הגדרות"}
+            </button>
+          </form>
         </div>
-
-        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          <div style={pillRow}>
-            <span style={{ fontSize: 13, color: "#7c8896", fontFamily: "Rubik, sans-serif", whiteSpace: "nowrap", flexShrink: 0 }}>תעריף שעתי רגיל ₪</span>
-            <input type="text" inputMode="decimal" value={regularRate} onChange={(e) => setRegularRate(e.target.value)} required style={numberInput} />
-          </div>
-
-          <div style={pillRow}>
-            <span style={{ fontSize: 13, color: "#7c8896", fontFamily: "Rubik, sans-serif", whiteSpace: "nowrap", flexShrink: 0 }}>תעריף שעתי בשבת ₪</span>
-            <input type="text" inputMode="decimal" value={shabbatRate} onChange={(e) => setShabbatRate(e.target.value)} required style={numberInput} />
-          </div>
-
-          <div style={pillRow}>
-            <span style={{ fontSize: 13, color: "#7c8896", fontFamily: "Rubik, sans-serif", whiteSpace: "nowrap", flexShrink: 0 }}>בונוס חודשי קבוע ₪</span>
-            <input type="text" inputMode="decimal" value={monthlyBonus} onChange={(e) => setMonthlyBonus(e.target.value)} required style={numberInput} />
-          </div>
-
-          <div style={pillRow}>
-            <span style={{ fontSize: 13, color: "#7c8896", fontFamily: "Rubik, sans-serif", whiteSpace: "nowrap", flexShrink: 0 }}>נסיעות ₪</span>
-            <input type="text" inputMode="decimal" value={travelAllowance} onChange={(e) => setTravelAllowance(e.target.value)} required style={numberInput} />
-          </div>
-
-          <div style={pillRow}>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <span style={{ fontSize: 13, color: "#7c8896", fontFamily: "Rubik, sans-serif", display: "block" }}>ניכויים קבועים נוספים ₪</span>
-              <span style={{ fontSize: 11, color: "#5c6776", fontFamily: "Rubik, sans-serif", display: "block", marginTop: 4, lineHeight: 1.5 }}>
-                למשל דמי טיפול/ועד — סכום קבוע שיורד כל חודש בלי קשר לשעות
-              </span>
-            </div>
-            <input type="text" inputMode="decimal" value={otherDeductions} onChange={(e) => setOtherDeductions(e.target.value)} required style={fixedNumberInput} />
-          </div>
-
-          <div style={pillRow}>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <span style={{ fontSize: 13, color: "#7c8896", fontFamily: "Rubik, sans-serif", display: "block" }}>בסיס לקרן השתלמות ₪</span>
-              <span style={{ fontSize: 11, color: "#5c6776", fontFamily: "Rubik, sans-serif", display: "block", marginTop: 4, lineHeight: 1.5 }}>
-                שכר קובע קבוע מהתלוש שלך (לא תלוי בשעות בפועל) — הניכוי הוא 2.5% ממנו
-              </span>
-            </div>
-            <input type="text" inputMode="decimal" value={studyFundBase} onChange={(e) => setStudyFundBase(e.target.value)} required style={fixedNumberInput} />
-          </div>
-
-          <label style={{ ...pillRow, cursor: "pointer", alignItems: "flex-start" }}>
-            <div>
-              <span style={{ fontSize: 13, color: "#7c8896", fontFamily: "Rubik, sans-serif", whiteSpace: "nowrap", display: "block" }}>שעות נוספות</span>
-              <span style={{ fontSize: 11, color: "#5c6776", fontFamily: "Rubik, sans-serif", display: "block", marginTop: 4, lineHeight: 1.5 }}>
-                מעל 8 שעות במשמרת: 125% לשעה ה-9 וה-10, 150% מעבר לזה
-              </span>
-            </div>
-            <input
-              type="checkbox"
-              checked={overtimeEnabled}
-              onChange={(e) => setOvertimeEnabled(e.target.checked)}
-              style={{ width: 20, height: 20, accentColor: "#34e0a1", flexShrink: 0, marginTop: 2 }}
-            />
-          </label>
-
-          <button
-            type="submit"
-            disabled={isSaving || isPending}
-            style={{
-              width: "100%", padding: 16,
-              background: "#34e0a1", color: "#06231a",
-              border: "none", borderRadius: 16,
-              cursor: (isSaving || isPending) ? "not-allowed" : "pointer",
-              fontWeight: 600, fontSize: 16, fontFamily: "Rubik, sans-serif",
-              opacity: (isSaving || isPending) ? 0.7 : 1, marginTop: 4,
-              transition: "opacity 0.15s",
-            }}
-          >
-            {(isSaving || isPending) ? "שומר..." : "שמירת הגדרות"}
-          </button>
-        </form>
       </div>
-    </div>
+    </ModalPortal>
   );
 }
