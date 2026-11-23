@@ -12,6 +12,8 @@ export interface Rule {
   amount: number | null;
   category: string;
   note: string;
+  /** Charges from this merchant are not added at all */
+  ignore: boolean;
 }
 
 const font = { fontFamily: "Rubik, sans-serif" } as const;
@@ -38,9 +40,10 @@ function RuleForm({ initial, onSaved, onCancel }: { initial?: Rule; onSaved: () 
   const [amount, setAmount] = useState(initial?.amount != null ? String(initial.amount) : "");
   const [category, setCategory] = useState(initial?.category ?? "");
   const [note, setNote] = useState(initial?.note ?? "");
+  const [ignore, setIgnore] = useState(initial?.ignore ?? false);
   const [busy, setBusy] = useState(false);
 
-  const canSave = merchant.trim() !== "" && category !== "";
+  const canSave = merchant.trim() !== "" && (ignore || category !== "");
 
   async function save() {
     if (!canSave) return;
@@ -49,7 +52,7 @@ function RuleForm({ initial, onSaved, onCancel }: { initial?: Rule; onSaved: () 
       const res = await fetch(initial ? `/api/merchant-rules/${initial.id}` : "/api/merchant-rules", {
         method: initial ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ merchant, amount: amount.trim() === "" ? null : amount, category, note }),
+        body: JSON.stringify({ merchant, amount: amount.trim() === "" ? null : amount, category, note, ignore }),
       });
       if (res.status === 409) {
         showToast({ type: "error", message: "כבר יש כלל כזה", detail: "אותו בית עסק ואותו סכום" });
@@ -84,6 +87,13 @@ function RuleForm({ initial, onSaved, onCancel }: { initial?: Rule; onSaved: () 
         placeholder="כל סכום"
       />
 
+      <label style={{ ...font, display: "flex", alignItems: "center", gap: 8, marginTop: 14, fontSize: 13, color: "#c9bfa6", cursor: "pointer" }}>
+        <input type="checkbox" checked={ignore} onChange={(e) => setIgnore(e.target.checked)} />
+        לא להוסיף חיובים כאלה לרשימה (מנוי שמנוהל במקום אחר)
+      </label>
+
+      {!ignore && (
+      <>
       <span style={{ ...label, marginTop: 12 }}>קטגוריה</span>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
         {EXPENSE_CATEGORIES.map((cat) => {
@@ -113,6 +123,8 @@ function RuleForm({ initial, onSaved, onCancel }: { initial?: Rule; onSaved: () 
 
       <span style={{ ...label, marginTop: 12 }}>הערה</span>
       <input style={input} value={note} onChange={(e) => setNote(e.target.value)} placeholder="למשל: תספורת" />
+      </>
+      )}
 
       <div style={{ display: "flex", gap: 10, marginTop: 14 }}>
         <button
@@ -174,9 +186,15 @@ function RuleRow({ rule, onChanged }: { rule: Rule; onChanged: () => void }) {
             {rule.merchant}
           </p>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6, flexWrap: "wrap" }}>
-            <span style={{ ...font, fontSize: 11, color: c.color, background: c.bg, border: `1px solid ${c.border}`, borderRadius: 999, padding: "2px 9px" }}>
-              {rule.category}
-            </span>
+            {rule.ignore ? (
+              <span style={{ ...font, fontSize: 11, color: "#fbbf24", background: "#1a1708", border: "1px solid #3a3115", borderRadius: 999, padding: "2px 9px" }}>
+                לא נכנס לרשימה
+              </span>
+            ) : (
+              <span style={{ ...font, fontSize: 11, color: c.color, background: c.bg, border: `1px solid ${c.border}`, borderRadius: 999, padding: "2px 9px" }}>
+                {rule.category}
+              </span>
+            )}
             {rule.note && <span style={{ ...font, fontSize: 12, color: "#9aa6b4" }}>{rule.note}</span>}
           </div>
         </div>
@@ -229,8 +247,8 @@ export default function RulesManager({ rules }: { rules: Rule[] }) {
     <div style={{ paddingTop: 24 }}>
       <h1 style={{ ...font, fontSize: 20, fontWeight: 600, color: "#f2f5f8" }}>כללי סיווג</h1>
       <p style={{ ...font, fontSize: 12, color: "#7c8896", marginTop: 6, marginBottom: 16, lineHeight: 1.6 }}>
-        חיוב אשראי מבית עסק שיש לו כלל נכנס ישר לקטגוריה ולהערה. כלל חל על חיובים חדשים ועל אלה שמחכים לסיווג,
-        ולא משנה חיובים שכבר סווגו.
+        חיוב אשראי מבית עסק שיש לו כלל נכנס ישר לקטגוריה ולהערה. כלל מסוג ״לא נכנס לרשימה״ מדלג על החיוב לגמרי,
+        למשל מנוי שכבר מנוהל במקום אחר. כלל חל על חיובים חדשים ועל אלה שמחכים לסיווג, ולא משנה חיובים שכבר סווגו.
       </p>
 
       <div style={{ background: "#11151b", border: "1px solid #1b212a", borderRadius: 16, padding: "14px 16px", marginBottom: 16 }}>

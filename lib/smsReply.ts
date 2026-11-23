@@ -4,7 +4,7 @@ const money = (n: number) => `₪${n.toLocaleString("he-IL")}`;
 
 function whyNotParsed(reason: string): string {
   if (reason === "refund-or-cancellation") return "זיכוי או ביטול. כדאי להזין אותו ידנית";
-  if (reason.startsWith("unsupported-currency")) return "חיוב במטבע שאינו שקל. כדאי להזין אותו ידנית";
+  if (reason.startsWith("unsupported-currency")) return "לא זיהיתי את המטבע בהודעה. כדאי להזין אותו ידנית";
   if (reason === "invalid-date" || reason === "invalid-amount" || reason === "missing-merchant") {
     return "חסר או לא תקין פרט בהודעה. כדאי להזין אותו ידנית";
   }
@@ -17,10 +17,17 @@ function whyNotParsed(reason: string): string {
  */
 export function outcomeText(outcome: SmsOutcome): string {
   switch (outcome.status) {
-    case "created":
+    case "created": {
+      // A charge in another currency shows what the message said, and that the shekel figure is a guess
+      const sum = outcome.foreign
+        ? `${outcome.foreign.currency} ${outcome.foreign.amount.toLocaleString("he-IL")} (כ-${money(outcome.amount)}, משוער)`
+        : money(outcome.amount);
       return outcome.needsReview
-        ? `חיוב חדש מחכה לסיווג: ${outcome.description} · ${money(outcome.amount)}`
-        : `נוסף חיוב: ${outcome.description} · ${outcome.category} · ${money(outcome.amount)}`;
+        ? `חיוב חדש מחכה לסיווג: ${outcome.description} · ${sum}`
+        : `נוסף חיוב: ${outcome.description} · ${outcome.category} · ${sum}`;
+    }
+    case "ignored":
+      return `לא נוסף, סימנת לדלג עליו: ${outcome.merchant}`;
     case "duplicate":
       return "ההודעה הזאת כבר נקלטה";
     case "duplicate-of-manual":

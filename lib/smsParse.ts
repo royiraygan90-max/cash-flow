@@ -8,15 +8,19 @@
  * drops those words and puts it before). Each ends with "למידע נוסף באפליקציה ובאתר: https://...
  * לשירותך, ישראכרט". The merchant is glued to the preposition "ב", whatever script it is in.
  *
- * Returns a reason instead of guessing when the text is not a plain shekel purchase
- * (foreign currency, refunds, a different wording), so the caller can report it.
+ * A purchase in another currency is read too (`currency` says which); turning it into shekels is
+ * the caller's job. Returns a reason instead of guessing when the text is not a purchase at all
+ * (a refund or cancellation, a different wording), so the caller can report it.
  */
 
 export type ParsedSms = {
   last4: string;
   /** Calendar day, yyyy-mm-dd */
   date: string;
+  /** As written in the SMS, in `currency` */
   amount: number;
+  /** ISO code: "ILS" for shekels, otherwise e.g. "USD" */
+  currency: string;
   merchant: string;
 };
 
@@ -26,6 +30,14 @@ export type SmsParseResult = { ok: true; value: ParsedSms } | { ok: false; reaso
 const INVISIBLE = /[‎‏‪-‮⁦-⁩﻿]/g;
 
 const SHEKEL = /^(?:ש["״”]ח|שח|₪|ILS)$/i;
+const SYMBOLS: Record<string, string> = { $: "USD", "€": "EUR", "£": "GBP" };
+
+/** "ILS" for any way of writing shekels, an ISO code for another currency, null for anything else. */
+function currencyCode(token: string): string | null {
+  if (SHEKEL.test(token)) return "ILS";
+  const code = SYMBOLS[token] ?? token.toUpperCase();
+  return /^[A-Z]{3}$/.test(code) ? code : null;
+}
 
 // "בכרטיסך המסתיים ב-2975," (older) or "בכרטיסך 2975" (newer)
 const CARD = String.raw`בכרטיסך(?:\s+המסתיים\s+ב-?)?\s*(\d{4})\s*,?`;
@@ -93,8 +105,9 @@ export function parseCardSms(text: string, now: Date = new Date()): SmsParseResu
 
   const [, last4, dayStr, monthStr, yearStr, curBefore, amountBefore, amountAfter, curAfter, rawMerchant] = m;
   const amountStr = amountBefore ?? amountAfter;
-  const currency = curBefore ?? curAfter;
-  if (!SHEKEL.test(currency)) return { ok: false, reason: `unsupported-currency:${currency}` };
+  const currencyToken = curBefore ?? curAfter;
+  const currency = currencyCode(currencyToken);
+  if (!currency) return { ok: false, reason: `unsupported-currency:${currencyToken}` };
 
   const day = Number(dayStr);
   const month = Number(monthStr);
@@ -110,5 +123,5 @@ export function parseCardSms(text: string, now: Date = new Date()): SmsParseResu
   const merchant = rawMerchant.replace(/^ב(?:-(?=[A-Za-z]))?/, "").replace(/[.\s]+$/, "").trim();
   if (!merchant) return { ok: false, reason: "missing-merchant" };
 
-  return { ok: true, value: { last4, date: `${year}-${pad(month)}-${pad(day)}`, amount, merchant } };
+  return { ok: true, value: { last4, date: `${year}-${pad(month)}-${pad(day)}`, amount, currency, merchant } };
 }
