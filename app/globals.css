@@ -84,6 +84,11 @@ input, select, textarea {
   font-size: 16px !important;
 }
 
+/* The big amount in the add-transaction sheet is far above 16px, so no zoom risk; it sets --amount-size. */
+input.amount-input {
+  font-size: var(--amount-size, 68px) !important;
+}
+
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: var(--bg-primary); }
 ::-webkit-scrollbar-thumb { background: var(--bg-tertiary); }
