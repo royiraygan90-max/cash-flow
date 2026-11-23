@@ -8,7 +8,8 @@ import ModalPortal from "./ModalPortal";
 import { useToast } from "./Toast";
 
 const INCOME_CATEGORIES  = ["משכורת", "פרילנס", "מסחר", "אחר"];
-export const EXPENSE_CATEGORIES = ["שכירות", "מזון", "קניות", "תחבורה", "בילויים", "בריאות", "משק בית", "מסחר", "פרילנס", "אחר"];
+// No rent here: it comes from the shared home app (home-hub) and arrives with its own category
+export const EXPENSE_CATEGORIES = ["מזון", "קניות", "תחבורה", "בילויים", "בריאות", "משק בית", "מסחר", "פרילנס", "אחר"];
 
 interface EditTransaction {
   id: string;
@@ -24,9 +25,19 @@ interface Props {
   editTransaction?: EditTransaction;
 }
 
-function toDateInputValue(dateStr: string): string {
-  const d = new Date(dateStr);
+function localDateValue(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function toDateInputValue(dateStr: string): string {
+  return localDateValue(new Date(dateStr));
+}
+
+/** The local calendar day `daysAgo` days before today, as yyyy-mm-dd. */
+function dayValue(daysAgo: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() - daysAgo);
+  return localDateValue(d);
 }
 
 export default function AddTransactionModal({ onClose, editTransaction }: Props) {
@@ -37,7 +48,7 @@ export default function AddTransactionModal({ onClose, editTransaction }: Props)
   const [isSaving, setIsSaving] = useState(false);
 
   const [type, setType]           = useState<"income" | "expense">(editTransaction ? (editTransaction.type === "income" ? "income" : "expense") : "expense");
-  const [date, setDate]           = useState(() => editTransaction ? toDateInputValue(editTransaction.date) : new Date().toISOString().split("T")[0]);
+  const [date, setDate]           = useState(() => editTransaction ? toDateInputValue(editTransaction.date) : dayValue(0));
   const [category, setCategory]   = useState(editTransaction?.category ?? EXPENSE_CATEGORIES[0]);
   const [description, setDesc]    = useState(editTransaction?.description ?? "");
   const [amount, setAmount]       = useState(editTransaction ? String(editTransaction.amount) : "");
@@ -96,16 +107,37 @@ export default function AddTransactionModal({ onClose, editTransaction }: Props)
     }
   }
 
-  const pillRow: React.CSSProperties = {
-    background: "#11151b",
-    border: "1px solid #1b212a",
-    borderRadius: 14,
-    padding: "14px 16px",
+  const isExpense = type === "expense";
+  const accent = isExpense ? "#ff6b6b" : "#34e0a1";
+  const font = { fontFamily: "Rubik, sans-serif" } as const;
+
+  const detailRow: React.CSSProperties = {
     display: "flex",
     alignItems: "center",
-    justifyContent: "space-between",
     gap: 12,
+    padding: "12px 14px",
   };
+  const detailIcon: React.CSSProperties = {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    background: "#161b22",
+    color: "#7c8896",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+  };
+  const dateChip = (active: boolean): React.CSSProperties => ({
+    ...font,
+    padding: "7px 14px",
+    borderRadius: 999,
+    fontSize: 13,
+    cursor: "pointer",
+    border: `1px solid ${active ? "#34e0a155" : "#1b212a"}`,
+    background: active ? "rgba(52,224,161,.12)" : "transparent",
+    color: active ? "#34e0a1" : "#9aa6b4",
+  });
 
   const modalStyle: React.CSSProperties = isMobile
     ? {
@@ -144,9 +176,11 @@ export default function AddTransactionModal({ onClose, editTransaction }: Props)
         onClick={(e) => e.target === e.currentTarget && onClose()}
       >
         <div style={modalStyle}>
+          {isMobile && <div style={{ width: 40, height: 4, borderRadius: 999, background: "#262d37", margin: "-10px auto 14px" }} />}
           {/* Header */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
             <button
+              type="button"
               onClick={onClose}
               style={{
                 width: 34, height: 34,
@@ -213,12 +247,21 @@ export default function AddTransactionModal({ onClose, editTransaction }: Props)
               })}
             </div>
 
-            {/* Amount input */}
-            <div style={{ textAlign: "center", padding: "12px 0" }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
-                <span style={{ fontSize: 24, color: type === "expense" ? "#ff6b6b" : "#34e0a1", fontFamily: "Rubik, sans-serif", fontWeight: 600 }}>
-                  {type === "expense" ? "−" : "+"}
-                </span>
+            {/* Amount: the hero of the sheet */}
+            <div
+              style={{
+                borderRadius: 24,
+                padding: "26px 12px 22px",
+                textAlign: "center",
+                background: isExpense
+                  ? "linear-gradient(180deg, #2a1418 0%, #12161c 100%)"
+                  : "linear-gradient(180deg, #0f2a22 0%, #12161c 100%)",
+                border: `1px solid ${isExpense ? "#3a1d22" : "#1c3a2f"}`,
+              }}
+            >
+              <p style={{ ...font, fontSize: 12, color: "#7c8896", marginBottom: 6 }}>{isExpense ? "כמה הוצאת?" : "כמה נכנס?"}</p>
+              <div dir="ltr" style={{ display: "flex", alignItems: "baseline", justifyContent: "center", gap: 8 }}>
+                <span style={{ ...font, fontSize: 40, fontWeight: 600, color: accent, lineHeight: 1 }}>{isExpense ? "−" : "+"}</span>
                 <input
                   type="text"
                   inputMode="decimal"
@@ -226,27 +269,33 @@ export default function AddTransactionModal({ onClose, editTransaction }: Props)
                   onChange={(e) => setAmount(e.target.value)}
                   required
                   placeholder="0"
+                  aria-label="סכום"
+                  className="amount-input"
                   style={{
+                    ...font,
+                    // Shrinks as the number grows so it always fits on one line (the class applies it)
+                    ["--amount-size" as string]: `${amount.length > 9 ? 40 : amount.length > 7 ? 50 : amount.length > 5 ? 60 : 72}px`,
                     background: "transparent",
                     border: "none",
                     outline: "none",
-                    fontSize: 52,
                     fontWeight: 600,
-                    color: "#f2f5f8",
-                    fontFamily: "Rubik, sans-serif",
-                    width: "160px",
+                    lineHeight: 1.05,
+                    color: amount ? "#f2f5f8" : "#3a434f",
+                    width: `${Math.max(amount.length, 1) + 0.5}ch`,
+                    minWidth: "1.5ch",
+                    maxWidth: "75%",
                     textAlign: "center",
-                    direction: "ltr",
+                    padding: 0,
                   }}
                 />
-                <span style={{ fontSize: 26, color: "#7c8896", fontFamily: "Rubik, sans-serif" }}>₪</span>
+                <span style={{ ...font, fontSize: 34, color: "#7c8896", lineHeight: 1 }}>₪</span>
               </div>
             </div>
 
             {/* Category grid */}
             <div>
-              <p style={{ fontSize: 12, color: "#7c8896", marginBottom: 10, fontFamily: "Rubik, sans-serif" }}>קטגוריה</p>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
+              <p style={{ fontSize: 12, color: "#7c8896", marginBottom: 8, fontFamily: "Rubik, sans-serif" }}>קטגוריה</p>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
                 {isEditing ? (
                   <input
                     type="text"
@@ -275,7 +324,7 @@ export default function AddTransactionModal({ onClose, editTransaction }: Props)
                         type="button"
                         onClick={() => setCategory(cat)}
                         style={{
-                          padding: "12px 8px",
+                          padding: "10px 6px",
                           borderRadius: 16,
                           border: selected ? `1px solid ${c.color}` : "1px solid #1b212a",
                           background: selected ? c.bg : "#11151b",
@@ -283,14 +332,14 @@ export default function AddTransactionModal({ onClose, editTransaction }: Props)
                           display: "flex",
                           flexDirection: "column",
                           alignItems: "center",
-                          gap: 6,
+                          gap: 5,
                           transition: "all 0.15s",
                         }}
                       >
                         <div
                           style={{
-                            width: 34,
-                            height: 34,
+                            width: 32,
+                            height: 32,
                             borderRadius: 10,
                             background: c.bg,
                             color: c.color,
@@ -311,46 +360,49 @@ export default function AddTransactionModal({ onClose, editTransaction }: Props)
               </div>
             </div>
 
-            {/* Description */}
-            <div style={pillRow}>
-              <span style={{ fontSize: 13, color: "#7c8896", fontFamily: "Rubik, sans-serif" }}>תיאור</span>
-              <input
-                type="text"
-                value={description}
-                onChange={(e) => setDesc(e.target.value)}
-                placeholder="תיאור קצר (אופציונלי)"
-                style={{
-                  background: "transparent",
-                  border: "none",
-                  outline: "none",
-                  color: "#f2f5f8",
-                  fontSize: 16,
-                  fontFamily: "Rubik, sans-serif",
-                  textAlign: "right",
-                  flex: 1,
-                  direction: "rtl",
-                }}
-              />
-            </div>
-
-            {/* Date */}
-            <div style={pillRow}>
-              <span style={{ fontSize: 13, color: "#7c8896", fontFamily: "Rubik, sans-serif" }}>תאריך</span>
-              <input
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                required
-                style={{
-                  background: "transparent",
-                  border: "none",
-                  outline: "none",
-                  color: "#f2f5f8",
-                  fontSize: 16,
-                  fontFamily: "Rubik, sans-serif",
-                  colorScheme: "dark",
-                }}
-              />
+            {/* Details: description and date in one card */}
+            <div style={{ background: "#11151b", border: "1px solid #1b212a", borderRadius: 18 }}>
+              <div style={detailRow}>
+                <span style={detailIcon}><Icon name="edit_note" size={20} /></span>
+                <input
+                  type="text"
+                  value={description}
+                  onChange={(e) => setDesc(e.target.value)}
+                  placeholder="על מה זה? (אופציונלי)"
+                  aria-label="תיאור"
+                  style={{
+                    ...font,
+                    background: "transparent",
+                    border: "none",
+                    outline: "none",
+                    color: "#f2f5f8",
+                    fontSize: 16,
+                    textAlign: "right",
+                    flex: 1,
+                    minWidth: 0,
+                    direction: "rtl",
+                  }}
+                />
+              </div>
+              <div style={{ height: 1, background: "#1b212a", margin: "0 14px" }} />
+              <div style={detailRow}>
+                <span style={detailIcon}><Icon name="event" size={20} /></span>
+                <button type="button" style={dateChip(date === dayValue(0))} onClick={() => setDate(dayValue(0))}>היום</button>
+                <button type="button" style={dateChip(date === dayValue(1))} onClick={() => setDate(dayValue(1))}>אתמול</button>
+                {/* The native picker sits invisibly over this chip, so a tap opens it */}
+                <label style={{ ...dateChip(date !== dayValue(0) && date !== dayValue(1)), position: "relative", display: "inline-flex", alignItems: "center", gap: 6 }}>
+                  <Icon name="calendar_month" size={16} />
+                  {date !== dayValue(0) && date !== dayValue(1) ? date.split("-").reverse().join("/") : "תאריך אחר"}
+                  <input
+                    type="date"
+                    value={date}
+                    onChange={(e) => e.target.value && setDate(e.target.value)}
+                    required
+                    aria-label="תאריך"
+                    style={{ position: "absolute", inset: 0, width: "100%", height: "100%", opacity: 0, cursor: "pointer", colorScheme: "dark" }}
+                  />
+                </label>
+              </div>
             </div>
 
             {/* Save button */}
@@ -363,7 +415,7 @@ export default function AddTransactionModal({ onClose, editTransaction }: Props)
                 background: "#34e0a1",
                 color: "#06231a",
                 border: "none",
-                borderRadius: 16,
+                borderRadius: 18,
                 cursor: (isSaving || isPending) ? "not-allowed" : "pointer",
                 fontWeight: 600,
                 fontSize: 16,
