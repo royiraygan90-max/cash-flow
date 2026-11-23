@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { CATEGORY_COLORS, DEFAULT_CATEGORY_COLOR } from "@/lib/categoryColors";
 import Icon from "./Icon";
+import ModalPortal from "./ModalPortal";
 import SourceBadge from "./SourceBadge";
 
 interface Transaction {
@@ -54,77 +55,79 @@ export default function CategoryTransactionsModal({ category, transactions, onCl
     : { background: "#0d1014", border: "1px solid #20272f", borderRadius: 28, boxShadow: "0 20px 60px rgba(0,0,0,0.6)", padding: "32px", width: "100%", maxWidth: 460, maxHeight: "84vh", overflowY: "auto" };
 
   return (
-    <div
-      style={{
-        position: "fixed", inset: 0,
-        background: "rgba(0,0,0,0.6)",
-        display: "flex",
-        alignItems: isMobile ? "flex-end" : "center",
-        justifyContent: "center",
-        zIndex: 50,
-        padding: isMobile ? 0 : 16,
-        direction: "rtl",
-      }}
-      onClick={(e) => e.target === e.currentTarget && onClose()}
-    >
-      <div style={modalStyle}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-          <button
-            onClick={onClose}
-            aria-label="סגור"
-            style={{ width: 34, height: 34, borderRadius: "50%", background: "#161b22", border: "none", color: "#9aa6b4", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
-          >
-            <Icon name="close" size={18} />
-          </button>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <h2 style={{ fontSize: 17, fontWeight: 600, color: "#f2f5f8", fontFamily: "Rubik, sans-serif" }}>
-              {category}
-            </h2>
-            <div style={{ width: 30, height: 30, borderRadius: 9, background: c.bg, color: c.color, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-              <Icon name={c.icon} size={16} />
-            </div>
-          </div>
-          <div style={{ width: 34 }} />
-        </div>
-
-        <p style={{ fontSize: 13, color: "#7c8896", fontFamily: "Rubik, sans-serif", marginBottom: 16, textAlign: "center" }}>
-          {sorted.length} הוצאות · סה&quot;כ ₪{fmtAmount(total)}
-        </p>
-
-        {sorted.length === 0 ? (
-          <div style={{ padding: 32, textAlign: "center", color: "#6b7785", fontSize: 14, fontFamily: "Rubik, sans-serif" }}>
-            אין הוצאות בקטגוריה זו החודש
-          </div>
-        ) : (
-          <div style={{ background: "#1b2230", border: "1px solid #20272f", borderRadius: 20, overflow: "hidden" }}>
-            {sorted.map((tx) => (
-              <div
-                key={tx.id}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  borderBottom: "1px solid #161b22",
-                  padding: "12px 16px",
-                  gap: 10,
-                }}
-              >
-                <div style={{ flex: 1, overflow: "hidden" }}>
-                  <p style={{ fontSize: 14, fontWeight: 500, color: "#f2f5f8", fontFamily: "Rubik, sans-serif", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    <SourceBadge source={tx.source} />
-                    {tx.description || tx.category}
-                  </p>
-                  <p style={{ fontSize: 11, color: "#6b7785", fontFamily: "Rubik, sans-serif", marginTop: 2 }}>
-                    {fmtDate(tx.date)}
-                  </p>
-                </div>
-                <span dir="ltr" style={{ fontSize: 15, fontWeight: 600, color: "#dfe5ec", fontFamily: "Rubik, sans-serif", flexShrink: 0 }}>
-                  ₪{fmtAmount(tx.amount)}
-                </span>
+    <ModalPortal>
+      <div
+        style={{
+          position: "fixed", inset: 0,
+          background: "rgba(0,0,0,0.6)",
+          display: "flex",
+          alignItems: isMobile ? "flex-end" : "center",
+          justifyContent: "center",
+          zIndex: 50,
+          padding: isMobile ? 0 : 16,
+          direction: "rtl",
+        }}
+        onClick={(e) => e.target === e.currentTarget && onClose()}
+      >
+        <div style={modalStyle}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+            <button
+              onClick={onClose}
+              aria-label="סגור"
+              style={{ width: 34, height: 34, borderRadius: "50%", background: "#161b22", border: "none", color: "#9aa6b4", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+            >
+              <Icon name="close" size={18} />
+            </button>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <h2 style={{ fontSize: 17, fontWeight: 600, color: "#f2f5f8", fontFamily: "Rubik, sans-serif" }}>
+                {category}
+              </h2>
+              <div style={{ width: 30, height: 30, borderRadius: 9, background: c.bg, color: c.color, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <Icon name={c.icon} size={16} />
               </div>
-            ))}
+            </div>
+            <div style={{ width: 34 }} />
           </div>
-        )}
+
+          <p style={{ fontSize: 13, color: "#7c8896", fontFamily: "Rubik, sans-serif", marginBottom: 16, textAlign: "center" }}>
+            {sorted.length} הוצאות · סה&quot;כ ₪{fmtAmount(total)}
+          </p>
+
+          {sorted.length === 0 ? (
+            <div style={{ padding: 32, textAlign: "center", color: "#6b7785", fontSize: 14, fontFamily: "Rubik, sans-serif" }}>
+              אין הוצאות בקטגוריה זו החודש
+            </div>
+          ) : (
+            <div style={{ background: "#1b2230", border: "1px solid #20272f", borderRadius: 20, overflow: "hidden" }}>
+              {sorted.map((tx) => (
+                <div
+                  key={tx.id}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    borderBottom: "1px solid #161b22",
+                    padding: "12px 16px",
+                    gap: 10,
+                  }}
+                >
+                  <div style={{ flex: 1, overflow: "hidden" }}>
+                    <p style={{ fontSize: 14, fontWeight: 500, color: "#f2f5f8", fontFamily: "Rubik, sans-serif", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      <SourceBadge source={tx.source} />
+                      {tx.description || tx.category}
+                    </p>
+                    <p style={{ fontSize: 11, color: "#6b7785", fontFamily: "Rubik, sans-serif", marginTop: 2 }}>
+                      {fmtDate(tx.date)}
+                    </p>
+                  </div>
+                  <span dir="ltr" style={{ fontSize: 15, fontWeight: 600, color: "#dfe5ec", fontFamily: "Rubik, sans-serif", flexShrink: 0 }}>
+                    ₪{fmtAmount(tx.amount)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </ModalPortal>
   );
 }

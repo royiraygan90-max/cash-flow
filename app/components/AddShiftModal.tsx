@@ -12,6 +12,7 @@ import {
 import { computeSalary, type SalaryProfile, type ShiftForPay } from "@/lib/salaryCalc";
 import { useToast } from "./Toast";
 import Icon from "./Icon";
+import ModalPortal from "./ModalPortal";
 
 interface EditShift {
   id: string;
@@ -204,318 +205,320 @@ export default function AddShiftModal({ onClose, editShift, profile, otherShifts
       };
 
   return (
-    <div
-      style={{
-        position: "fixed", inset: 0,
-        background: "rgba(0,0,0,0.6)",
-        display: "flex",
-        alignItems: isMobile ? "flex-end" : "center",
-        justifyContent: "center",
-        zIndex: 50,
-        padding: isMobile ? 0 : 16,
-        direction: "rtl",
-      }}
-      onClick={(e) => e.target === e.currentTarget && onClose()}
-    >
-      <div style={modalStyle}>
-        {/* Header */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
-          <button
-            onClick={onClose}
-            style={{
-              width: 34, height: 34,
-              borderRadius: "50%",
-              background: "#161b22",
-              border: "none",
-              color: "#9aa6b4",
-              cursor: "pointer",
-              display: "flex", alignItems: "center", justifyContent: "center",
-            }}
-          >
-            <Icon name="close" size={18} />
-          </button>
-          <h2 style={{ fontSize: 17, fontWeight: 600, color: "#f2f5f8", fontFamily: "Rubik, sans-serif" }}>
-            {isEditing ? "עריכת משמרת" : "משמרת חדשה"}
-          </h2>
-          <div style={{ width: 34 }} />
-        </div>
-
-        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-          {/* Preset chips */}
-          <div
-            style={{
-              display: "flex",
-              gap: 8,
-              overflowX: "auto",
-              paddingBottom: 4,
-              scrollbarWidth: "none",
-            }}
-          >
-            {PRESETS.map((p) => (
-              <button
-                key={p.label}
-                type="button"
-                onClick={() => { setStartTime(p.start); setEndTime(p.end); }}
-                style={{
-                  background: "#11151b",
-                  border: "1px solid #1b212a",
-                  borderRadius: 14,
-                  padding: "10px 14px",
-                  fontSize: 13,
-                  fontFamily: "Rubik, sans-serif",
-                  color: "#cdd5de",
-                  cursor: "pointer",
-                  whiteSpace: "nowrap",
-                  flexShrink: 0,
-                  transition: "border-color 0.15s, color 0.15s",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = "rgba(52,224,161,.4)";
-                  e.currentTarget.style.color = "#34e0a1";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = "#1b212a";
-                  e.currentTarget.style.color = "#cdd5de";
-                }}
-              >
-                {p.label}
-              </button>
-            ))}
-          </div>
-
-          {/* Date */}
-          <div style={pillRow}>
-            <span style={{ fontSize: 13, color: "#7c8896", fontFamily: "Rubik, sans-serif" }}>תאריך</span>
-            <input
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              required
+    <ModalPortal>
+      <div
+        style={{
+          position: "fixed", inset: 0,
+          background: "rgba(0,0,0,0.6)",
+          display: "flex",
+          alignItems: isMobile ? "flex-end" : "center",
+          justifyContent: "center",
+          zIndex: 50,
+          padding: isMobile ? 0 : 16,
+          direction: "rtl",
+        }}
+        onClick={(e) => e.target === e.currentTarget && onClose()}
+      >
+        <div style={modalStyle}>
+          {/* Header */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
+            <button
+              onClick={onClose}
               style={{
-                background: "transparent",
+                width: 34, height: 34,
+                borderRadius: "50%",
+                background: "#161b22",
                 border: "none",
-                outline: "none",
-                color: "#f2f5f8",
-                fontSize: 16,
-                fontFamily: "Rubik, sans-serif",
-                colorScheme: "dark",
-              }}
-            />
-          </div>
-
-          {/* Start + End time row */}
-          <div style={{ display: "flex", gap: 10 }}>
-            <div style={{ ...pillRow, flex: 1 }}>
-              <span style={{ fontSize: 13, color: "#7c8896", fontFamily: "Rubik, sans-serif", flexShrink: 0 }}>התחלה</span>
-              <input
-                type="time"
-                value={startTime}
-                onChange={(e) => setStartTime(e.target.value)}
-                required
-                style={{
-                  background: "transparent",
-                  border: "none",
-                  outline: "none",
-                  color: "#f2f5f8",
-                  fontSize: 16,
-                  fontFamily: "Rubik, sans-serif",
-                  colorScheme: "dark",
-                  direction: "ltr",
-                  flex: 1,
-                  textAlign: "left",
-                }}
-              />
-            </div>
-            <div style={{ ...pillRow, flex: 1 }}>
-              <span style={{ fontSize: 13, color: "#7c8896", fontFamily: "Rubik, sans-serif", flexShrink: 0 }}>סיום</span>
-              <input
-                type="time"
-                value={endTime}
-                onChange={(e) => setEndTime(e.target.value)}
-                required
-                style={{
-                  background: "transparent",
-                  border: "none",
-                  outline: "none",
-                  color: "#f2f5f8",
-                  fontSize: 16,
-                  fontFamily: "Rubik, sans-serif",
-                  colorScheme: "dark",
-                  direction: "ltr",
-                  flex: 1,
-                  textAlign: "left",
-                }}
-              />
-            </div>
-          </div>
-
-          {/* Live preview */}
-          {hasPreview && previewSplit && (
-            <div
-              style={{
-                textAlign: "center",
-                padding: "10px 0 4px",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                gap: 4,
+                color: "#9aa6b4",
+                cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center",
               }}
             >
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ fontSize: 14, color: "#9aa6b4", fontFamily: "Rubik, sans-serif" }}>
-                  {formatHoursAsClock(previewSplit.totalHours)} שעות · כ-₪{previewPay.toLocaleString("he-IL")} ברוטו
-                </span>
-                {isPureShabbat && (
-                  <span
-                    style={{
-                      fontSize: 10,
-                      color: "#a78bfa",
-                      background: "rgba(167,139,250,.13)",
-                      borderRadius: 8,
-                      padding: "2px 8px",
-                      fontFamily: "Rubik, sans-serif",
-                      fontWeight: 500,
-                    }}
-                  >
-                    שבת
-                  </span>
-                )}
-                {hasOvertime && (
-                  <span
-                    style={{
-                      fontSize: 10,
-                      color: "#34e0a1",
-                      background: "rgba(52,224,161,.13)",
-                      borderRadius: 8,
-                      padding: "2px 8px",
-                      fontFamily: "Rubik, sans-serif",
-                      fontWeight: 500,
-                    }}
-                  >
-                    שעות נוספות
-                  </span>
-                )}
-              </div>
-              {isMixed && (
-                <span style={{ fontSize: 12, color: "#7c8896", fontFamily: "Rubik, sans-serif" }}>
-                  שבת {formatHoursAsClock(previewSplit.shabbatHours)} · רגיל {formatHoursAsClock(previewSplit.regularHours)}
-                </span>
-              )}
-              {previewPay > 0 && (
+              <Icon name="close" size={18} />
+            </button>
+            <h2 style={{ fontSize: 17, fontWeight: 600, color: "#f2f5f8", fontFamily: "Rubik, sans-serif" }}>
+              {isEditing ? "עריכת משמרת" : "משמרת חדשה"}
+            </h2>
+            <div style={{ width: 34 }} />
+          </div>
+
+          <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            {/* Preset chips */}
+            <div
+              style={{
+                display: "flex",
+                gap: 8,
+                overflowX: "auto",
+                paddingBottom: 4,
+                scrollbarWidth: "none",
+              }}
+            >
+              {PRESETS.map((p) => (
                 <button
+                  key={p.label}
                   type="button"
-                  onClick={() => setShowDeductions(true)}
+                  onClick={() => { setStartTime(p.start); setEndTime(p.end); }}
                   style={{
+                    background: "#11151b",
+                    border: "1px solid #1b212a",
+                    borderRadius: 14,
+                    padding: "10px 14px",
                     fontSize: 13,
-                    color: "#34e0a1",
                     fontFamily: "Rubik, sans-serif",
-                    fontWeight: 500,
-                    background: "none",
-                    border: "none",
+                    color: "#cdd5de",
                     cursor: "pointer",
-                    padding: 0,
-                    textDecoration: "underline",
-                    textDecorationStyle: "dotted",
-                    textUnderlineOffset: 3,
+                    whiteSpace: "nowrap",
+                    flexShrink: 0,
+                    transition: "border-color 0.15s, color 0.15s",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = "rgba(52,224,161,.4)";
+                    e.currentTarget.style.color = "#34e0a1";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = "#1b212a";
+                    e.currentTarget.style.color = "#cdd5de";
                   }}
                 >
-                  כ-₪{previewNet.toLocaleString("he-IL")} נטו ({previewDeductionPct}% ניכויים)
+                  {p.label}
                 </button>
-              )}
+              ))}
             </div>
-          )}
 
-          {showDeductions && previewBreakdown && (
-            <div
-              style={{
-                position: "fixed", inset: 0,
-                background: "rgba(0,0,0,0.6)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                zIndex: 60,
-                padding: 16,
-                direction: "rtl",
-              }}
-              onClick={(e) => e.target === e.currentTarget && setShowDeductions(false)}
-            >
-              <div
+            {/* Date */}
+            <div style={pillRow}>
+              <span style={{ fontSize: 13, color: "#7c8896", fontFamily: "Rubik, sans-serif" }}>תאריך</span>
+              <input
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                required
                 style={{
-                  background: "#0d1014",
-                  border: "1px solid #20272f",
-                  borderRadius: 24,
-                  boxShadow: "0 20px 60px rgba(0,0,0,0.6)",
-                  padding: 24,
-                  width: "100%",
-                  maxWidth: 320,
+                  background: "transparent",
+                  border: "none",
+                  outline: "none",
+                  color: "#f2f5f8",
+                  fontSize: 16,
+                  fontFamily: "Rubik, sans-serif",
+                  colorScheme: "dark",
                 }}
-              >
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-                  <button
-                    type="button"
-                    onClick={() => setShowDeductions(false)}
-                    style={{ width: 28, height: 28, borderRadius: "50%", background: "#161b22", border: "none", color: "#9aa6b4", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
-                  >
-                    <Icon name="close" size={16} />
-                  </button>
-                  <h3 style={{ fontSize: 15, fontWeight: 600, color: "#f2f5f8", fontFamily: "Rubik, sans-serif" }}>
-                    פירוט ניכויים למשמרת
-                  </h3>
-                  <div style={{ width: 28 }} />
-                </div>
+              />
+            </div>
 
-                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                  {[
-                    { label: "מס הכנסה", value: previewBreakdown.incomeTax },
-                    { label: "ביטוח לאומי ובריאות", value: previewBreakdown.bituachLeumiHealth },
-                    { label: "פנסיה", value: previewBreakdown.pension },
-                    { label: "קרן השתלמות", value: previewBreakdown.studyFund },
-                  ].filter((row) => row.value !== 0).map((row) => (
-                    <div key={row.label} style={{ display: "flex", justifyContent: "space-between", fontSize: 13, fontFamily: "Rubik, sans-serif" }}>
-                      <span style={{ color: "#9aa6b4" }}>{row.label}</span>
-                      <span style={{ color: "#ff8f8f", direction: "ltr" }}>−₪{row.value.toLocaleString("he-IL")}</span>
-                    </div>
-                  ))}
-
-                  <div style={{ borderTop: "1px solid #20272f", margin: "6px 0" }} />
-
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, fontWeight: 600, fontFamily: "Rubik, sans-serif" }}>
-                    <span style={{ color: "#f2f5f8" }}>סה״כ ניכויים</span>
-                    <span style={{ color: "#f2f5f8", direction: "ltr" }}>−₪{(previewPay - previewNet).toLocaleString("he-IL")}</span>
-                  </div>
-                </div>
-
-                <p style={{ fontSize: 11, color: "#5c6776", fontFamily: "Rubik, sans-serif", textAlign: "center", marginTop: 14, lineHeight: 1.5 }}>
-                  מחושב לפי המדרגה השולית שאליה המשמרת מצטרפת החודש, לא לפי אחוז קבוע
-                </p>
+            {/* Start + End time row */}
+            <div style={{ display: "flex", gap: 10 }}>
+              <div style={{ ...pillRow, flex: 1 }}>
+                <span style={{ fontSize: 13, color: "#7c8896", fontFamily: "Rubik, sans-serif", flexShrink: 0 }}>התחלה</span>
+                <input
+                  type="time"
+                  value={startTime}
+                  onChange={(e) => setStartTime(e.target.value)}
+                  required
+                  style={{
+                    background: "transparent",
+                    border: "none",
+                    outline: "none",
+                    color: "#f2f5f8",
+                    fontSize: 16,
+                    fontFamily: "Rubik, sans-serif",
+                    colorScheme: "dark",
+                    direction: "ltr",
+                    flex: 1,
+                    textAlign: "left",
+                  }}
+                />
+              </div>
+              <div style={{ ...pillRow, flex: 1 }}>
+                <span style={{ fontSize: 13, color: "#7c8896", fontFamily: "Rubik, sans-serif", flexShrink: 0 }}>סיום</span>
+                <input
+                  type="time"
+                  value={endTime}
+                  onChange={(e) => setEndTime(e.target.value)}
+                  required
+                  style={{
+                    background: "transparent",
+                    border: "none",
+                    outline: "none",
+                    color: "#f2f5f8",
+                    fontSize: 16,
+                    fontFamily: "Rubik, sans-serif",
+                    colorScheme: "dark",
+                    direction: "ltr",
+                    flex: 1,
+                    textAlign: "left",
+                  }}
+                />
               </div>
             </div>
-          )}
 
-          {/* Save button */}
-          <button
-            type="submit"
-            disabled={isSaving || isPending}
-            style={{
-              width: "100%",
-              padding: 16,
-              background: "#34e0a1",
-              color: "#06231a",
-              border: "none",
-              borderRadius: 16,
-              cursor: (isSaving || isPending) ? "not-allowed" : "pointer",
-              fontWeight: 600,
-              fontSize: 16,
-              fontFamily: "Rubik, sans-serif",
-              opacity: (isSaving || isPending) ? 0.7 : 1,
-              marginTop: 4,
-              transition: "opacity 0.15s",
-            }}
-          >
-            {(isSaving || isPending) ? "שומר..." : isEditing ? "שמירת שינויים" : "שמירת משמרת"}
-          </button>
-        </form>
+            {/* Live preview */}
+            {hasPreview && previewSplit && (
+              <div
+                style={{
+                  textAlign: "center",
+                  padding: "10px 0 4px",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: 4,
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ fontSize: 14, color: "#9aa6b4", fontFamily: "Rubik, sans-serif" }}>
+                    {formatHoursAsClock(previewSplit.totalHours)} שעות · כ-₪{previewPay.toLocaleString("he-IL")} ברוטו
+                  </span>
+                  {isPureShabbat && (
+                    <span
+                      style={{
+                        fontSize: 10,
+                        color: "#a78bfa",
+                        background: "rgba(167,139,250,.13)",
+                        borderRadius: 8,
+                        padding: "2px 8px",
+                        fontFamily: "Rubik, sans-serif",
+                        fontWeight: 500,
+                      }}
+                    >
+                      שבת
+                    </span>
+                  )}
+                  {hasOvertime && (
+                    <span
+                      style={{
+                        fontSize: 10,
+                        color: "#34e0a1",
+                        background: "rgba(52,224,161,.13)",
+                        borderRadius: 8,
+                        padding: "2px 8px",
+                        fontFamily: "Rubik, sans-serif",
+                        fontWeight: 500,
+                      }}
+                    >
+                      שעות נוספות
+                    </span>
+                  )}
+                </div>
+                {isMixed && (
+                  <span style={{ fontSize: 12, color: "#7c8896", fontFamily: "Rubik, sans-serif" }}>
+                    שבת {formatHoursAsClock(previewSplit.shabbatHours)} · רגיל {formatHoursAsClock(previewSplit.regularHours)}
+                  </span>
+                )}
+                {previewPay > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setShowDeductions(true)}
+                    style={{
+                      fontSize: 13,
+                      color: "#34e0a1",
+                      fontFamily: "Rubik, sans-serif",
+                      fontWeight: 500,
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                      padding: 0,
+                      textDecoration: "underline",
+                      textDecorationStyle: "dotted",
+                      textUnderlineOffset: 3,
+                    }}
+                  >
+                    כ-₪{previewNet.toLocaleString("he-IL")} נטו ({previewDeductionPct}% ניכויים)
+                  </button>
+                )}
+              </div>
+            )}
+
+            {showDeductions && previewBreakdown && (
+              <div
+                style={{
+                  position: "fixed", inset: 0,
+                  background: "rgba(0,0,0,0.6)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  zIndex: 60,
+                  padding: 16,
+                  direction: "rtl",
+                }}
+                onClick={(e) => e.target === e.currentTarget && setShowDeductions(false)}
+              >
+                <div
+                  style={{
+                    background: "#0d1014",
+                    border: "1px solid #20272f",
+                    borderRadius: 24,
+                    boxShadow: "0 20px 60px rgba(0,0,0,0.6)",
+                    padding: 24,
+                    width: "100%",
+                    maxWidth: 320,
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+                    <button
+                      type="button"
+                      onClick={() => setShowDeductions(false)}
+                      style={{ width: 28, height: 28, borderRadius: "50%", background: "#161b22", border: "none", color: "#9aa6b4", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                    >
+                      <Icon name="close" size={16} />
+                    </button>
+                    <h3 style={{ fontSize: 15, fontWeight: 600, color: "#f2f5f8", fontFamily: "Rubik, sans-serif" }}>
+                      פירוט ניכויים למשמרת
+                    </h3>
+                    <div style={{ width: 28 }} />
+                  </div>
+
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {[
+                      { label: "מס הכנסה", value: previewBreakdown.incomeTax },
+                      { label: "ביטוח לאומי ובריאות", value: previewBreakdown.bituachLeumiHealth },
+                      { label: "פנסיה", value: previewBreakdown.pension },
+                      { label: "קרן השתלמות", value: previewBreakdown.studyFund },
+                    ].filter((row) => row.value !== 0).map((row) => (
+                      <div key={row.label} style={{ display: "flex", justifyContent: "space-between", fontSize: 13, fontFamily: "Rubik, sans-serif" }}>
+                        <span style={{ color: "#9aa6b4" }}>{row.label}</span>
+                        <span style={{ color: "#ff8f8f", direction: "ltr" }}>−₪{row.value.toLocaleString("he-IL")}</span>
+                      </div>
+                    ))}
+
+                    <div style={{ borderTop: "1px solid #20272f", margin: "6px 0" }} />
+
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, fontWeight: 600, fontFamily: "Rubik, sans-serif" }}>
+                      <span style={{ color: "#f2f5f8" }}>סה״כ ניכויים</span>
+                      <span style={{ color: "#f2f5f8", direction: "ltr" }}>−₪{(previewPay - previewNet).toLocaleString("he-IL")}</span>
+                    </div>
+                  </div>
+
+                  <p style={{ fontSize: 11, color: "#5c6776", fontFamily: "Rubik, sans-serif", textAlign: "center", marginTop: 14, lineHeight: 1.5 }}>
+                    מחושב לפי המדרגה השולית שאליה המשמרת מצטרפת החודש, לא לפי אחוז קבוע
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Save button */}
+            <button
+              type="submit"
+              disabled={isSaving || isPending}
+              style={{
+                width: "100%",
+                padding: 16,
+                background: "#34e0a1",
+                color: "#06231a",
+                border: "none",
+                borderRadius: 16,
+                cursor: (isSaving || isPending) ? "not-allowed" : "pointer",
+                fontWeight: 600,
+                fontSize: 16,
+                fontFamily: "Rubik, sans-serif",
+                opacity: (isSaving || isPending) ? 0.7 : 1,
+                marginTop: 4,
+                transition: "opacity 0.15s",
+              }}
+            >
+              {(isSaving || isPending) ? "שומר..." : isEditing ? "שמירת שינויים" : "שמירת משמרת"}
+            </button>
+          </form>
+        </div>
       </div>
-    </div>
+    </ModalPortal>
   );
 }
